@@ -1,5 +1,5 @@
 fundamental = 100
-mode = 2
+mode = 0
 transposition = 0
 maxInterval = 2
 interval = 7 / 4
