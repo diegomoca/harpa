@@ -5,6 +5,12 @@
 
 s.latency = nil;
 
+// set up osc server
+(
+    ~oscReceiver = NetAddr("localhost", 13933);
+    thisProcess.openUDPPort(13933)
+)
+
 // create SynthDef
 (
     SynthDef(\stringsBody, {
@@ -67,7 +73,11 @@ s.latency = nil;
     ~stringsBody.setn(
         // string parameters
         \infsustain, 1!11,
-        \strFreq, [100, 117.236328125, 133.984375, 153.125, 175.0, 200, 234.47265625, 267.96875, 306.25, 350.0, 400],
+        \strFreq, [
+            100, 117.236328125, 133.984375,
+            153.125, 175.0, 200, 234.47265625,
+            267.96875, 306.25, 350.0, 400
+        ],
         \accent, 0.5!11,
         \striStruct, 0.1!11,
         \striBright, 0.2!11,
@@ -82,6 +92,15 @@ s.latency = nil;
     )
 )
 
+// Receive frequencies from python
+(   
+    ~frequenciesRecieve = OSCFunc({
+        |msg|
+        postln(msg[1..]);
+        ~stringsBody.setn(\strFreq, msg[1..]);
+    }, '/freqs')
+)
+
 // initialize keyboard control
 (
     var stringPicker = Array.new(11);
@@ -92,64 +111,22 @@ s.latency = nil;
         |char|
         k.put(char, {
             |char|
-            if(char == $1){
-                stringPicker.put(0, 1);
-                ~stringsBody.setn(\t_trigger, stringPicker);
-                stringPicker = 0!11;
-            };
-            if(char == $2){
-                stringPicker.put(1, 1);
-                ~stringsBody.setn(\t_trigger, stringPicker);
-                stringPicker = 0!11
-            };
-            if(char == $3){
-                stringPicker.put(2, 1);
-                ~stringsBody.setn(\t_trigger, stringPicker);
-                stringPicker = 0!11
-            };
-            if(char == $4){
-                stringPicker.put(3, 1);
-                ~stringsBody.setn(\t_trigger, stringPicker);
-                stringPicker = 0!11
-            };
-            if(char == $v){
-                stringPicker.put(4, 1);
-                ~stringsBody.setn(\t_trigger, stringPicker);
-                stringPicker = 0!11
-            };
-            if(char == $b){
-                stringPicker.put(5, 1);
-                ~stringsBody.setn(\t_trigger, stringPicker);
-                stringPicker = 0!11
-            };
-            if(char == $7){
-                stringPicker.put(6, 1);
-                ~stringsBody.setn(\t_trigger, stringPicker);
-                stringPicker = 0!11
-            };
-            if(char == $8){
-                stringPicker.put(7, 1);
-                ~stringsBody.setn(\t_trigger, stringPicker);
-                stringPicker = 0!11
-            };
-            if(char == $9){
-                stringPicker.put(8, 1);
-                ~stringsBody.setn(\t_trigger, stringPicker);
-                stringPicker = 0!11
-            };
-            if(char == $0){
-                stringPicker.put(9, 1);
-                ~stringsBody.setn(\t_trigger, stringPicker);
-                stringPicker = 0!11
-            };
-            if(char == $z){
-                stringPicker.put(10, 1);
-                ~stringsBody.setn(\t_trigger, stringPicker);
-                stringPicker = 0!11
-            };
+            var charArray = [$1, $2, $3, $4, $v, $b, $7, $8, $9, $0, $z];
+            var index = 0;
+
+            charArray.size.do({
+                if(char == charArray[index]){
+                    stringPicker.put(index, 1);
+                    ~stringsBody.setn(\t_trigger, stringPicker);
+                    stringPicker = 0!11;
+
+                };
+                index = index + 1
+            })
         })
     };
     g = KeyPlayerGui(k);
 )
 
 ~stringsBody = nil;
+

@@ -1,4 +1,6 @@
 - connect to python
+    - send
+    - receive
 - add better interface for parameters
 - add randomizeer/humanizer around parameter settings
 - change trigger for envelope
