@@ -1,0 +1,9 @@
+- connect to python
+- add better interface for parameters
+- add randomizeer/humanizer around parameter settings
+- change trigger for envelope
+- add octave and transposition buttons
+- create a body for each set of 5+1 strings but send a bit of the other set to each body
+- test different tunings
+- find a way to release voices
+- test midi controller
