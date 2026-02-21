@@ -1,11 +1,8 @@
 # import OSC functions
-from osc4py3.as_eventloop import *
-from osc4py3 import oscbuildparse
-
-# start OSC client to send messages
-osc_startup()
-osc_udp_client('127.0.0.1', 57120, 'scOSCClient')
-print("OSCClient started. Ready to send messages")
+import time
+from osc4py3.as_eventloop import * # needed to send and receive OSC
+from osc4py3 import oscbuildparse # needed to send OSC
+from osc4py3 import oscmethod as osm # needed to receive OSC
 
 fundamental = 100
 mode = 2
@@ -14,6 +11,22 @@ maxInterval = 2
 interval = 7 / 4
 noteNumber = 5
 frequencies = []
+
+# define OSC handler function
+def oscTestFunction(value):
+    print(value)
+
+
+# start OSC 
+osc_startup()
+# set up client to send messages
+osc_udp_client('127.0.0.1', 57120, 'scOSCClient')
+print("OSC Client started. Ready to send messages!")
+# set up OSC server to receive messages
+osc_udp_server("127.0.0.1", 57121, 'scOSCServer')
+print("OSC Server started. Ready to receive messages!")
+
+osc_method("/test", oscTestFunction)
 
 if 0 <= mode < noteNumber:
     frequency = fundamental
@@ -45,7 +58,13 @@ osc_send(oscbuildparse.OSCMessage(
     '/freqs', ',fffffffffff', frequencies
 ),'scOSCClient')
 
-for x in range(10):
-    osc_process()
 
-osc_terminate()
+finished = False
+try:
+    while True:
+        osc_process()
+        time.sleep(0.001)
+except KeyboardInterrupt:
+    osc_terminate()
+
+

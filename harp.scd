@@ -5,11 +5,13 @@
 
 s.latency = nil;
 
-// set up osc server
+// set up osc client
 (
-    ~oscReceiver = NetAddr("localhost", 13933);
-    thisProcess.openUDPPort(13933)
+    ~oscClient = NetAddr("localhost", 57121);
 )
+~oscClient.sendMsg("/test", 42)
+
+~oscClient.disconnect
 
 // create SynthDef
 (
@@ -112,16 +114,14 @@ s.latency = nil;
         k.put(char, {
             |char|
             var charArray = [$1, $2, $3, $4, $v, $b, $7, $8, $9, $0, $z];
-            var index = 0;
 
-            charArray.size.do({
-                if(char == charArray[index]){
-                    stringPicker.put(index, 1);
+            charArray.do({
+                arg item, count;
+                if(char == item){
+                    stringPicker.put(count, 1);
                     ~stringsBody.setn(\t_trigger, stringPicker);
                     stringPicker = 0!11;
-
                 };
-                index = index + 1
             })
         })
     };

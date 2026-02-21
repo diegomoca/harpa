@@ -1,11 +1,15 @@
-- connect to python
-    - send
-    - receive
+TODO
+- add octave and transposition buttons
 - add better interface for parameters
 - add randomizeer/humanizer around parameter settings
 - change trigger for envelope
-- add octave and transposition buttons
 - create a body for each set of 5+1 strings but send a bit of the other set to each body
 - test different tunings
 - find a way to release voices
+    - take strings out of synthdef and send them to body through busees
 - test midi controller
+
+DONE
+X connect to python
+    X send
+    X receive
