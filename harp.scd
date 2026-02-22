@@ -3,13 +3,13 @@
     s.window.alwaysOnTop_(true);
 )
 
+s.boot
+
 s.latency = nil;
 
 // set up osc client
-(
-    ~oscClient = NetAddr("localhost", 57121);
-)
-~oscClient.sendMsg("/test", 42)
+~oscClient = NetAddr("localhost", 57121);
+
 
 ~oscClient.disconnect
 
@@ -109,24 +109,43 @@ s.latency = nil;
     stringPicker = 0!11;
 
     k = KeyPlayer(\stringNumber);
-    "1234vb7890z".do{
+    "qwervbzuiohalskdj".do{
         |char|
         k.put(char, {
             |char|
-            var charArray = [$1, $2, $3, $4, $v, $b, $7, $8, $9, $0, $z];
+            var stringKeys = [$q, $w, $e, $r, $v, $b, $z, $u, $i, $o, $h];
 
-            charArray.do({
+            // string triggers
+            stringKeys.do({
                 arg item, count;
                 if(char == item){
                     stringPicker.put(count, 1);
                     ~stringsBody.setn(\t_trigger, stringPicker);
                     stringPicker = 0!11;
                 };
-            })
+            });
+            // cycle modes
+            if(char == $d){
+                ~oscClient.sendMsg("/mode", "prev")
+            };
+            if(char == $j){
+                ~oscClient.sendMsg("/mode", "next")
+            };
+            // transpose by steps
+            if(char == $s){
+                ~oscClient.sendMsg("/transposition/step", "down")
+            };
+            if(char == $k){
+                ~oscClient.sendMsg("/transposition/step", "up")
+            };
+            // transpose by limit interval "octave"
+            if(char == $a){
+                ~oscClient.sendMsg("/transposition/limitInterval", "down")
+            };
+            if(char == $l){
+                ~oscClient.sendMsg("/transposition/limitInterval", "up")
+            }
         })
     };
     g = KeyPlayerGui(k);
 )
-
-~stringsBody = nil;
-
