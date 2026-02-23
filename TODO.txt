@@ -1,6 +1,8 @@
 TODO
-- add octave slector
-- add transposition selector 
+- add cycle interval transposer
+- add generator interval transposer
+- print the degree of each frequency respective to the number of stacked cycle intervals
+- add frequency shift time
 - add better interface for parameters
 - add randomizeer/humanizer around parameter settings
 - change trigger for envelope
@@ -16,3 +18,4 @@ X connect to python
     X send
     X receive
 X add mode selector
+X make inverted generator interval relative to cycle interval
