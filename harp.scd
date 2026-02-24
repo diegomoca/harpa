@@ -138,12 +138,12 @@ s.latency = nil;
             if(char == $k){
                 ~oscClient.sendMsg("/transposition/step", "up")
             };
-            // transpose by limit interval "octave"
+            // transpose by cycle interval "pseudo-octave"
             if(char == $a){
-                ~oscClient.sendMsg("/transposition/limitInterval", "down")
+                ~oscClient.sendMsg("/transposition/cycle_interval", "down")
             };
             if(char == $l){
-                ~oscClient.sendMsg("/transposition/limitInterval", "up")
+                ~oscClient.sendMsg("/transposition/cycle_interval", "up")
             }
         })
     };

@@ -11,6 +11,7 @@ intevalA = 5 / 2
 intervalB = 7 / 4
 generator_interval = min(intevalA, intervalB)   # interval to stack
 cycle_interval = max(intevalA, intervalB)       # limit for stacked intervals (pseudo-octave)
+pseudo_octave = 0
 notesNumber = 5
 frequencies = []
 
@@ -51,6 +52,12 @@ def calculateFreqs():
         # add last note (2 cycle intervals above fundamental)
         frequencies.append(frequencies[0] * cycle_interval ** 2)
 
+        # transposition by cycle interval
+        if pseudo_octave == -1:
+            frequencies = [x / cycle_interval for x in frequencies]
+        if pseudo_octave == 1:
+            frequencies = [x * cycle_interval for x in frequencies]
+
         # sort intervals
         frequencies.sort()
 
@@ -88,6 +95,34 @@ def cycleModes(message):
         f"frequencies: {freqsRounded}\n"
     )
 
+# define cycle interval transpose function
+def cycle_intervalTranspose(message):
+    global frequencies, pseudo_octave
+
+    # transpose down by cycle interval
+    print(f"transposition by cycle interval: {message}")
+    if message == "down":
+        if pseudo_octave > -1:
+            pseudo_octave -= 1
+            calculateFreqs()
+    # transpose up by cycle interval
+    if message == "up":
+        if pseudo_octave < 1:
+            pseudo_octave += 1
+            calculateFreqs()
+    
+    # send new frequencies
+    sendFreqs()
+
+    freqsRounded = [round(x, 2) for x in frequencies]
+    print(
+        f"current pseudo-octave: {pseudo_octave + 1}\n"
+        f"frequencies: {freqsRounded}\n"
+    )
+    
+
+# === === # === === # === === # === === # === === # === === #
+
 # start OSC 
 osc_startup()
 # set up client to send messages
@@ -97,12 +132,16 @@ print("OSC Client started. Ready to send messages!")
 osc_udp_server("127.0.0.1", 57121, 'scOSCServer')
 print("OSC Server started. Ready to receive messages!")
 
-# calculate initial frequencies
+# calculate and send initial frequencies
 calculateFreqs()
+sendFreqs()
 print(frequencies, "\n")
 
 # osc method to call cycleModes function
 osc_method("/mode", cycleModes)
+
+# osc method to call transposition by cycle interval function
+osc_method("/transposition/cycle_interval", cycle_intervalTranspose)
 
 
 finished = False

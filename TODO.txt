@@ -1,5 +1,4 @@
 TODO
-- add cycle interval transposer
 - add generator interval transposer
 - print the degree of each frequency respective to the number of stacked cycle intervals
 - add frequency shift time
@@ -19,3 +18,5 @@ X connect to python
     X receive
 X add mode selector
 X make inverted generator interval relative to cycle interval
+X add cycle interval transposer
+
