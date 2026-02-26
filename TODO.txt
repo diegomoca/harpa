@@ -1,19 +1,16 @@
 TODO
-- configure midi controller
-- print the degree of each frequency respective to the number of stacked cycle intervals
-- print intervals alongside frequencies
-- implement sorted and unsorted mode
-- add frequency shift time
-- add better interface for parameters
-- add randomizeer/humanizer around parameter settings
-- change trigger for envelope
-- create a body for each set of 5+1 strings but send a bit of the other set to each body
-- test different tunings
 - find a way to release voices
     - take strings out of synthdef and send them to body through busees
-- test midi controller
-- addd individual transposition controls to each hand and make them controllable with the oposite hand
+- change trigger for envelope
+- add better interface for parameters
 - add live controls for python variables
+- implement sorted and unsorted mode
+- add individual transposition controls to each hand and make them controllable with the oposite hand
+- print the degree of each frequency respective to the number of stacked cycle intervals
+- print intervals alongside frequencies
+- add randomizeer/humanizer around parameter settings
+- create a body for each set of 5+1 strings but send a bit of the other set to each body
+- test different tunings
 
 DONE
 X connect to python
@@ -23,3 +20,4 @@ X add mode selector
 X make inverted generator interval relative to cycle interval
 X add cycle interval transposer
 X add generator interval transposer
+X configure midi controller

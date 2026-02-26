@@ -7,10 +7,8 @@ from osc4py3 import oscmethod as osm # needed to receive OSC
 fundamental = 100
 mode = 0
 transposition = 0
-# intevalA = 5 / 2
-# intervalB = 7 / 4
-intevalA = 2 / 1
-intervalB = 3 / 2
+intevalA = 5 / 2
+intervalB = 7 / 4
 generator_interval = min(intevalA, intervalB)   # interval to stack
 cycle_interval = max(intevalA, intervalB)       # limit for stacked intervals (pseudo-octave)
 pseudo_octave = 0

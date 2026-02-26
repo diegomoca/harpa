@@ -103,6 +103,60 @@ s.latency = nil;
     }, '/freqs')
 )
 
+// initialize midi control
+(
+    var stringPicker = Array.new(11);
+    stringPicker = 0!11;
+
+    MIDIClient.init;
+    MIDIIn.connectAll;
+
+    MIDIdef.noteOn(\noteOn, {
+        |val, num|
+        var stringKeys = [49, 51, 54, 56, 58, 61, 63, 66, 68, 70, 72];
+
+        num.postln;
+
+            // string triggers
+            stringKeys.do({
+                arg item, count;
+                if(num == item){
+                    stringPicker.put(count, 1);
+                    ~stringsBody.setn(\t_trigger, stringPicker);
+                    stringPicker = 0!11;
+                };
+            });
+            // cycle modes
+            if(num == 57){
+                ~oscClient.sendMsg("/mode", "prev")
+            };
+            if(num == 62){
+                ~oscClient.sendMsg("/mode", "next")
+            };
+            // transpose by cycle interval "pseudo-octave"
+            if(num == 48){
+                ~oscClient.sendMsg("/transposition/cycle_interval", "down")
+            };
+            if(num == 71){
+                ~oscClient.sendMsg("/transposition/cycle_interval", "up")
+            };
+            // transpose by generator interval
+            if(num == 59){
+                ~oscClient.sendMsg("/transposition/generator_interval/transpositionDirection", "down")
+            };
+            if(num == 60){
+                ~oscClient.sendMsg("/transposition/generator_interval/transpositionDirection", "up")
+            };
+            if(num == 52){
+                ~oscClient.sendMsg("/transposition/generator_interval/degreeDirection", "down")
+            };
+            if(num == 67){
+                ~oscClient.sendMsg("/transposition/generator_interval/degreeDirection", "up")
+            };
+    })
+)
+MIDIdef.freeAll
+
 // initialize keyboard control
 (
     var stringPicker = Array.new(11);
