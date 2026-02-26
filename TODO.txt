@@ -1,6 +1,8 @@
 TODO
-- add generator interval transposer
+- configure midi controller
 - print the degree of each frequency respective to the number of stacked cycle intervals
+- print intervals alongside frequencies
+- implement sorted and unsorted mode
 - add frequency shift time
 - add better interface for parameters
 - add randomizeer/humanizer around parameter settings
@@ -10,7 +12,8 @@ TODO
 - find a way to release voices
     - take strings out of synthdef and send them to body through busees
 - test midi controller
-- addd individual transposition controls to each hand
+- addd individual transposition controls to each hand and make them controllable with the oposite hand
+- add live controls for python variables
 
 DONE
 X connect to python
@@ -19,4 +22,4 @@ X connect to python
 X add mode selector
 X make inverted generator interval relative to cycle interval
 X add cycle interval transposer
-
+X add generator interval transposer

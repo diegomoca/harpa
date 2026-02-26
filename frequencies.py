@@ -7,13 +7,20 @@ from osc4py3 import oscmethod as osm # needed to receive OSC
 fundamental = 100
 mode = 0
 transposition = 0
-intevalA = 5 / 2
-intervalB = 7 / 4
+# intevalA = 5 / 2
+# intervalB = 7 / 4
+intevalA = 2 / 1
+intervalB = 3 / 2
 generator_interval = min(intevalA, intervalB)   # interval to stack
 cycle_interval = max(intevalA, intervalB)       # limit for stacked intervals (pseudo-octave)
 pseudo_octave = 0
+transpositionDegree = 0
+transpositionDegreeDirection = None
+degreeDirection = None
+transpositionDirection = "up"
 notesNumber = 5
 frequencies = []
+genTransp_interval = 1
 
 # DEFINE FUNCTIONS
 # function to calculate frequencies
@@ -58,6 +65,9 @@ def calculateFreqs():
         if pseudo_octave == 1:
             frequencies = [x * cycle_interval for x in frequencies]
 
+        # transposition by generator interval
+        frequencies = [x * genTransp_interval for x in frequencies]
+
         # sort intervals
         frequencies.sort()
 
@@ -71,17 +81,17 @@ def sendFreqs():
     ),'scOSCClient')
 
 # define mode cycle function
-def cycleModes(message):
+def cycleModes(modeDirection):
     global mode, frequencies
 
     # previouus mode
-    print(f"mode change: {message}")
-    if message == "prev":
+    print(f"mode change: {modeDirection}")
+    if modeDirection == "prev":
         if mode > 0:
             mode -= 1
             calculateFreqs()
     # next mode
-    if message == "next":
+    if modeDirection == "next":
         if mode < notesNumber - 1:
             mode += 1
             calculateFreqs()
@@ -96,17 +106,17 @@ def cycleModes(message):
     )
 
 # define cycle interval transpose function
-def cycle_intervalTranspose(message):
+def cycle_intervalTranspose(cycle_intervalTranspDir):
     global frequencies, pseudo_octave
 
     # transpose down by cycle interval
-    print(f"transposition by cycle interval: {message}")
-    if message == "down":
+    print(f"transposition by cycle interval: {cycle_intervalTranspDir}")
+    if cycle_intervalTranspDir == "down":
         if pseudo_octave > -1:
             pseudo_octave -= 1
             calculateFreqs()
     # transpose up by cycle interval
-    if message == "up":
+    if cycle_intervalTranspDir == "up":
         if pseudo_octave < 1:
             pseudo_octave += 1
             calculateFreqs()
@@ -119,7 +129,93 @@ def cycle_intervalTranspose(message):
         f"current pseudo-octave: {pseudo_octave + 1}\n"
         f"frequencies: {freqsRounded}\n"
     )
+
+# define generator interval transpose function
+def generator_intervalTranspose(address, message):
+    global frequencies, transpositionDegree, transpositionDegreeDirection
+    global degreeDirection, transpositionDirection, genTransp_interval
+
+    if address == "/transposition/generator_interval/degreeDirection":
+        degreeDirection = message
+    if address == "/transposition/generator_interval/transpositionDirection":
+        transpositionDirection = message
+        print(f"transposition direction set to: {transpositionDirection}")
+
+    # evaluate frequencies transposed down a degree if selected direction matches
+    if degreeDirection == "down":
+        print("degree direction: down")
+        if transpositionDirection == "down":
+            print("transposition direction: down")
+            # perform calculation "down down" if new degree falls within boundaries
+            if transpositionDegree > -(notesNumber - 1):
+                # reduce transposition degree by 1
+                transpositionDegree -= 1
+                # divide scale "fundamental" by generator interval
+                genTransp_interval = genTransp_interval / generator_interval
+                # multiply frequency by cyle interval if it goes below it
+                if genTransp_interval <= 1 / cycle_interval:
+                    genTransp_interval = genTransp_interval * cycle_interval
+        if transpositionDirection == "up":
+            print("transposition direction: up")
+            # perform calculation "down up" if new degree falls within boundaries
+            if  transpositionDegree > -(notesNumber - 1):
+                # reduce transposition degree by 1
+                transpositionDegree -= 1
+                # divide scale "fundamental" by generator interval
+                genTransp_interval = genTransp_interval / generator_interval
+                # multiply frequency by cyle interval if it goes below scale "fundamental"
+                if genTransp_interval < 1:
+                    genTransp_interval = genTransp_interval * cycle_interval
     
+    # evaluate frequencies transposed up a degree if selected direction matches
+    if degreeDirection == "up":
+        print("degree direction: up")
+        if transpositionDirection == "down":
+            print("transposition direction: down")
+            # perform calculation "up down" if new degree falls within boundaries
+            if transpositionDegree < (notesNumber - 1):
+                # increment transposition degree by 1
+                transpositionDegree += 1
+                # multiply scale "fundamental" by generator interval
+                genTransp_interval = genTransp_interval * generator_interval
+                # divide frequency by cyle interval if it falls above scale "fundamental"
+                if genTransp_interval > 1:
+                    genTransp_interval = genTransp_interval / cycle_interval
+        if transpositionDirection == "up":
+            print("transposition direction: up")
+            if transpositionDegree < (notesNumber - 1):
+                # increment transposition degree by 1
+                transpositionDegree += 1
+                # multiply scale "fundamental" by generator interval
+                genTransp_interval = genTransp_interval * generator_interval
+                # divide frequency by cyle interval if it goes above it
+                if genTransp_interval >= cycle_interval:
+                    genTransp_interval = genTransp_interval / cycle_interval
+
+    if genTransp_interval < 1:
+        transpositionDegreeDirection = "down"
+    elif genTransp_interval > 1:
+        transpositionDegreeDirection = "up"
+
+    if address == "/transposition/generator_interval/degreeDirection":
+        # calculate and send new frequencies
+        calculateFreqs()
+        sendFreqs()
+
+        # print transposition information and new frequencies
+        if transpositionDegree == 0:
+            print(f"current degree: {transpositionDegree}")
+        else:
+            print(f"current degree: {transpositionDegree} {transpositionDegreeDirection}")
+        print(genTransp_interval)
+        freqsRounded = [round(x, 2) for x in frequencies]
+        print(f"frequencies: {freqsRounded}\n")
+    
+    degreeDirection = None
+    print("")
+                
+
+
 
 # === === # === === # === === # === === # === === # === === #
 
@@ -143,6 +239,13 @@ osc_method("/mode", cycleModes)
 # osc method to call transposition by cycle interval function
 osc_method("/transposition/cycle_interval", cycle_intervalTranspose)
 
+# osc method to call transposition by generator interfal fuanction
+osc_method(
+    "/transposition/generator_interval",
+    generator_intervalTranspose,
+    argscheme=osm.OSCARG_ADDRESS + osm.OSCARG_DATAUNPACK
+)
+
 
 finished = False
 try:
@@ -151,6 +254,3 @@ try:
         time.sleep(0.001)
 except KeyboardInterrupt:
     osc_terminate()
-
-
-

@@ -109,11 +109,12 @@ s.latency = nil;
     stringPicker = 0!11;
 
     k = KeyPlayer(\stringNumber);
-    "qwervbzuiohalskdj".do{
+    "qwervbzuiohalskdjcn".do{
         |char|
         k.put(char, {
             |char|
             var stringKeys = [$q, $w, $e, $r, $v, $b, $z, $u, $i, $o, $h];
+            ~generator_intervalTranspose = ["up", "up"];
 
             // string triggers
             stringKeys.do({
@@ -131,20 +132,26 @@ s.latency = nil;
             if(char == $j){
                 ~oscClient.sendMsg("/mode", "next")
             };
-            // transpose by steps
-            if(char == $s){
-                ~oscClient.sendMsg("/transposition/step", "down")
-            };
-            if(char == $k){
-                ~oscClient.sendMsg("/transposition/step", "up")
-            };
             // transpose by cycle interval "pseudo-octave"
             if(char == $a){
                 ~oscClient.sendMsg("/transposition/cycle_interval", "down")
             };
             if(char == $l){
                 ~oscClient.sendMsg("/transposition/cycle_interval", "up")
-            }
+            };
+            // transpose by generator interval
+            if(char == $c){
+                ~oscClient.sendMsg("/transposition/generator_interval/transpositionDirection", "down")
+            };
+            if(char == $n){
+                ~oscClient.sendMsg("/transposition/generator_interval/transpositionDirection", "up")
+            };
+            if(char == $s){
+                ~oscClient.sendMsg("/transposition/generator_interval/degreeDirection", "down")
+            };
+            if(char == $k){
+                ~oscClient.sendMsg("/transposition/generator_interval/degreeDirection", "up")
+            };
         })
     };
     g = KeyPlayerGui(k);
