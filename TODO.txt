@@ -1,5 +1,4 @@
 TODO
-- add envelope retrigger
 - add note hold mode
 - make function of encoders exponential
 - add better interface for parameters
@@ -12,6 +11,7 @@ TODO
 - add randomizeer/humanizer around parameter settings
 - create a body for each set of 5+1 strings but send a bit of the other set to each body
 - test different tunings
+- create interface to change parameter via osc address input through keyboard
 
 DONE
 X connect to python
@@ -25,3 +25,4 @@ X configure midi controller
 X find a way to release voices
     X take strings out of synthdef and send them to body through busees
 X change trigger for envelope
+X add envelope retrigger

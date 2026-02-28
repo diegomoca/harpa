@@ -40,14 +40,18 @@ MIDIFunc.trace(false)
     // SynthDef for individual string
     SynthDef(\string, {
         |out|
-        var sig, ampEnv, trigger, trigFreq;
+        var sig, ampEnv, trigger, trigFreq, impulse;
 
         ampEnv = Env.adsr(0.01);
         trigFreq = In.kr(\trigFreqBus.kr(0), 1);
 
+        impulse = HPZ1.kr(
+            Phasor.kr(\t_retrigger.kr(0), trigFreq * ControlDur.ir, 0, 1, 0)
+        ) < 0;
+
         trigger = Trig.kr(Select.kr(\triggerMethod.kr(0), [
-            Impulse.kr(trigFreq) + \t_retrigger.kr(1),
-            Dust.kr(trigFreq) + \t_retrigger.kr(1)
+            impulse + \t_retrigger.kr,
+            Dust.kr(trigFreq)
         ]), \trigDur.kr(0.01));
         
         sig = StringVoice.ar(trigger, 1, 300) * EnvGen.kr(ampEnv, \gate.kr(1), doneAction: 2);
@@ -79,13 +83,14 @@ MIDIFunc.trace(false)
         if(~keyArr[0] == nil, {
             // create new string synthdef if it doesn't exist
             ~keyArr.put(0, Synth(\string, [
+                \t_retrigger, 1,
                 \out, ~bodyBus,
                 \triggerMethod, 0,
                 \trigFreqBus, ~trigFreqBus
             ]).onFree({~keyArr[0] = nil}))
         }, {
             // if it exist, change its parameter
-            ~keyArr.at(0).set(\t_retrigger, 1)
+            ~keyArr.at(0).set(\t_retrigger, 1, \gate, 1)
         })
     });
     MIDIdef.noteOff(\stringGateClose, {
@@ -109,6 +114,3 @@ MIDIFunc.trace(false)
         ~trigFreqBus.getSynchronous.postln
     }, ccNum: 27)
 )
-
-
-
