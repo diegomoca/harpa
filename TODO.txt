@@ -1,8 +1,9 @@
 TODO
-- find a way to release voices
-    - take strings out of synthdef and send them to body through busees
-- change trigger for envelope
+- add envelope retrigger
+- add note hold mode
+- make function of encoders exponential
 - add better interface for parameters
+    - map parameters to midi controller
 - add live controls for python variables
 - implement sorted and unsorted mode
 - add individual transposition controls to each hand and make them controllable with the oposite hand
@@ -21,3 +22,6 @@ X make inverted generator interval relative to cycle interval
 X add cycle interval transposer
 X add generator interval transposer
 X configure midi controller
+X find a way to release voices
+    X take strings out of synthdef and send them to body through busees
+X change trigger for envelope
