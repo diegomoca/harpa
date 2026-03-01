@@ -23,6 +23,21 @@ MIDIFunc.trace(false)
     // define midi notes to play strings
     var stringKeys = [49, 51, 54, 56, 58, 61, 63, 66, 68, 70, 72];
 
+    // initial string parameters
+    // tuning (traditional pentatonic scale)
+    var striFreq = [100, 112.5, 126.5625, 150.0, 168.75, 200.0, 225.0, 253.125, 300.0, 337.5, 400.0],
+        accent = 0.5!11,
+        striStruct = 0.1!11,
+        striBright = 0.2!11,
+        striDamp = 0.8!11,
+        // initial body parameters
+        bodFreq = 6.25!2,
+        position = 0.5!2,
+        resolution = 50!2,
+        bodStruct = 0.2!2,
+        bodBright = 0!2,
+        bodDamp = 0.8!2;
+
     // initialize midi
     MIDIClient.init;
     MIDIIn.connectAll;
@@ -33,7 +48,7 @@ MIDIFunc.trace(false)
     ~trigFreqBus.value_(0);
 
     // audio bus to send audio to body
-    ~bodyBus = Bus.audio(s, 1);
+    ~bodyBus = Bus.audio(s, 2);
 
     // create a group for strings and one for bodies
     // so that the bodies are always under the strings on the server
@@ -70,9 +85,16 @@ MIDIFunc.trace(false)
             Dust.kr(trigFreq)
         ]), \trigDur.kr(0.01));
         
-        sig = StringVoice.ar(trigger, 1, 300) * EnvGen.kr(ampEnv, \gate.kr(1), doneAction: 2);
+        // actual string synthesizer
+        sig = StringVoice.ar(
+            trigger, 1, \striFreq.kr(300), \accent.kr(0.5),
+            \striStruct.kr(0.5), \striBright.kr(0.5), \striDamp.kr(0.5)
+        ) * EnvGen.kr(ampEnv, \gate.kr(1), doneAction: 2);
 
-        Out.ar(out, sig)
+        // panning
+        sig = PanAz.ar(2, sig, \panning.kr(0.0), 1.0);
+
+        Out.ar(out, sig * 0.2)
     }).add;
 
     // SynthDef for body or resonator
@@ -80,13 +102,16 @@ MIDIFunc.trace(false)
         |in, stringsFree = 0|
         var sig;
         
-        sig = In.ar(in, 1);
-        sig = Resonator.ar(sig)!2;
+        sig = In.ar(in, 2);
+        sig = Resonator.ar(
+            sig, \bodFreq.kr(100), \position.kr(0.001), \resolution.kr(24),
+            \bodStruct.kr(0.5), \bodBright.kr(0.5), \bodDamp.kr(0.5)
+        );
         
         // detect silence in both left and right and if strings are inactive, free body
-        FreeSelf.kr(DetectSilence.ar(sig + Impulse.ar(0)).product * stringsFree, doneAction: 2);
+        FreeSelf.kr(DetectSilence.ar(sig + Impulse.ar(0)).product * stringsFree);
 
-        Out.ar(0, sig)
+        Out.ar(0, sig * 0.2)
     }).add;
 
     // MIDIDefs to open and close string's ADSR
@@ -104,12 +129,29 @@ MIDIFunc.trace(false)
                 if (~bodyArr[0] == nil, {
                     ~bodyArr.put(0, Synth(\body, [
                         \in, ~bodyBus,
+                        // body parameters
+                        \bodFreq, bodFreq[0],
+                        \position, position[0],
+                        \resolution, resolution[0],
+                        \bodStruct, bodStruct[0],
+                        \bodBright, bodBright[0],
+                        \bodDamp, bodDamp[0],
                     ], ~bodiesGroup).onFree({~bodyArr[0] = nil}))
                 });
                 // create a new voice or retrigger if one already exist
                 if(~keyArr[count] == nil, {
                     // create new string synthdef if it doesn't exist
                     ~keyArr.put(count, Synth(\string, [
+                        // string parameters
+                        \striFreq, striFreq[count],
+                        \accent, accent[count],
+                        \striStruct, striStruct[count],
+                        \striBright, striBright[count],
+                        \striDamp, striDamp[count],
+                        // string panning depending on key
+                        // 0 = -1, 10 = 1 for 11 strings 0-10
+                        \panning, (count * 1/5) * - 1,
+
                         \t_retrigger, 1,
                         \out, ~bodyBus,
                         \triggerMethod, 0,
@@ -119,7 +161,7 @@ MIDIFunc.trace(false)
                         // reset the key index back to nil
                         ~keyArr[count] = nil;
                         // detect if all the strings are freed and perform the function
-                        if(~keyArr.every({|item| item == nil}) == true, {
+                        if(~keyArr.every({ |item| item == nil }) == true, {
                             // send message to body when all strings are free
                             ~bodyArr[0].set(\stringsFree, 1)
                         })

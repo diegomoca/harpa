@@ -1,7 +1,10 @@
 TODO
-- expand new voice design to 11 voices
+0.1
+- implement two boddies
+- reconnect to python
+- add individual string parameters
 - add note hold mode
-- add option to retrigger envelopes with individual pulses
+- add second envelope triggered individual pulses
 - make function of encoders exponential
 - add better interface for parameters
     - map parameters to midi controller
@@ -14,6 +17,7 @@ TODO
 - create a body for each set of 5+1 strings but send a bit of the other set to each body
 - test different tunings
 - create interface to change parameter via osc address input through keyboard
+- add width and position to panning (search max project for reference)
 
 DONE
 X connect to python
@@ -29,3 +33,5 @@ X find a way to release voices
 X change trigger for envelope
 X add envelope retrigger
 X find a way to release body only when strings are released
+X expand new voice design to 11 voices
+X implement panning
