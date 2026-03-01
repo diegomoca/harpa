@@ -120,6 +120,7 @@ MIDIFunc.trace(false)
                         ~keyArr[count] = nil;
                         // detect if all the strings are freed and perform the function
                         if(~keyArr.every({|item| item == nil}) == true, {
+                            // send message to body when all strings are free
                             ~bodyArr[0].set(\stringsFree, 1)
                         })
                     }))
