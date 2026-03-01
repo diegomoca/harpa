@@ -77,13 +77,14 @@ MIDIFunc.trace(false)
 
     // SynthDef for body or resonator
     SynthDef(\body, {
-        |in|
+        |in, stringsFree = 0|
         var sig;
-
+        
         sig = In.ar(in, 1);
         sig = Resonator.ar(sig)!2;
-
-        DetectSilence.ar(sig, doneAction: 2);
+        
+        // detect silence in both left and right and if strings are inactive, free body
+        FreeSelf.kr(DetectSilence.ar(sig + Impulse.ar(0)).product * stringsFree, doneAction: 2);
 
         Out.ar(0, sig)
     }).add;
@@ -113,7 +114,15 @@ MIDIFunc.trace(false)
                         \out, ~bodyBus,
                         \triggerMethod, 0,
                         \trigFreqBus, ~trigFreqBus
-                    ], ~stringsGroup).onFree({~keyArr[count] = nil}))
+                    ], ~stringsGroup).onFree({
+                        // function to run everytime one of the strings are freed
+                        // reset the key index back to nil
+                        ~keyArr[count] = nil;
+                        // detect if all the strings are freed and perform the function
+                        if(~keyArr.every({|item| item == nil}) == true, {
+                            ~bodyArr[0].set(\stringsFree, 1)
+                        })
+                    }))
                 }, {
                     // if it exist, change its parameter
                     ~keyArr.at(count).set(\t_retrigger, 1, \gate, 1)
