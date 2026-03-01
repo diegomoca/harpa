@@ -41,7 +41,7 @@ MIDIFunc.trace(false)
     ~bodiesGroup = Group.after(~stringsGroup);
 
     // array to index voices (number of elements = number of "strings")
-    ~keyArr = nil!10;
+    ~keyArr = nil!11;
 
     // array to index ressonators (number of elements = number of "bodies")
     ~bodyArr = nil!2;
@@ -77,13 +77,13 @@ MIDIFunc.trace(false)
 
     // SynthDef for body or resonator
     SynthDef(\body, {
-        |in, stringRunning|
+        |in|
         var sig;
 
         sig = In.ar(in, 1);
         sig = Resonator.ar(sig)!2;
 
-        FreeSelf.kr(DetectSilence.ar(sig) * ( 1 - stringRunning));
+        DetectSilence.ar(sig, doneAction: 2);
 
         Out.ar(0, sig)
     }).add;
@@ -103,24 +103,20 @@ MIDIFunc.trace(false)
                 if (~bodyArr[0] == nil, {
                     ~bodyArr.put(0, Synth(\body, [
                         \in, ~bodyBus,
-                        \stringRunning, 1
                     ], ~bodiesGroup).onFree({~bodyArr[0] = nil}))
                 });
                 // create a new voice or retrigger if one already exist
-                if(~keyArr[0] == nil, {
-                    // activate flag so that body can recognize andd not turn off
-                    // if string is running but not producing sound
-                    ~bodyArr[0].set(\stringRunning, 1);
+                if(~keyArr[count] == nil, {
                     // create new string synthdef if it doesn't exist
-                    ~keyArr.put(0, Synth(\string, [
+                    ~keyArr.put(count, Synth(\string, [
                         \t_retrigger, 1,
                         \out, ~bodyBus,
                         \triggerMethod, 0,
                         \trigFreqBus, ~trigFreqBus
-                    ], ~stringsGroup).onFree({~keyArr[0] = nil; ~bodyArr[0].set(\stringRunning, 0)}))
+                    ], ~stringsGroup).onFree({~keyArr[count] = nil}))
                 }, {
                     // if it exist, change its parameter
-                    ~keyArr.at(0).set(\t_retrigger, 1, \gate, 1)
+                    ~keyArr.at(count).set(\t_retrigger, 1, \gate, 1)
                 })
             };
         });
@@ -131,8 +127,8 @@ MIDIFunc.trace(false)
             arg item, count;
             if(note == item){
                 // operate only if synthdef exists
-                if(~keyArr[0]!= nil, {
-                    ~keyArr.at(0).set(\gate, 0)
+                if(~keyArr[count]!= nil, {
+                    ~keyArr.at(count).set(\gate, 0)
                 })
             };
         })
