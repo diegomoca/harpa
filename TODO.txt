@@ -1,5 +1,8 @@
 TODO
+- find a way to release body only when strings are released
+- expand new voice design to 10 voices
 - add note hold mode
+- add option to retrigger envelopes with individual pulses
 - make function of encoders exponential
 - add better interface for parameters
     - map parameters to midi controller
