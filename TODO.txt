@@ -1,6 +1,5 @@
 TODO
 0.1
-- reconnect to python
 - add individual string parameters
 - add note hold mode
 - add better interface for parameters
@@ -36,3 +35,5 @@ X expand new voice design to 11 voices
 X implement panning
 X implement two bodies
     X send different mix to ech body
+X reconnect to python
+    X use fractions

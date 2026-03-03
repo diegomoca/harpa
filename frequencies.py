@@ -1,3 +1,4 @@
+from fractions import Fraction
 # import OSC functions
 import time
 from osc4py3.as_eventloop import * # needed to send and receive OSC
@@ -7,8 +8,8 @@ from osc4py3 import oscmethod as osm # needed to receive OSC
 fundamental = 100
 mode = 0
 transposition = 0
-intevalA = 5 / 2
-intervalB = 7 / 4
+intevalA = Fraction(5/2)
+intervalB = Fraction(7/4)
 generator_interval = min(intevalA, intervalB)   # interval to stack
 cycle_interval = max(intevalA, intervalB)       # limit for stacked intervals (pseudo-octave)
 pseudo_octave = 0
@@ -97,7 +98,7 @@ def cycleModes(modeDirection):
     # send new frequencies
     sendFreqs()
     
-    freqsRounded = [round(x, 2) for x in frequencies]
+    freqsRounded = [round(float(x), 2) for x in frequencies]
     print(
         f"current mode: {mode + 1}/{notesNumber}\n"
         f"frequencies: {freqsRounded}\n"
@@ -122,7 +123,7 @@ def cycle_intervalTranspose(cycle_intervalTranspDir):
     # send new frequencies
     sendFreqs()
 
-    freqsRounded = [round(x, 2) for x in frequencies]
+    freqsRounded = [round(float(x), 2) for x in frequencies]
     print(
         f"current pseudo-octave: {pseudo_octave + 1}\n"
         f"frequencies: {freqsRounded}\n"
@@ -206,7 +207,7 @@ def generator_intervalTranspose(address, message):
         else:
             print(f"current degree: {transpositionDegree} {transpositionDegreeDirection}")
         print(genTransp_interval)
-        freqsRounded = [round(x, 2) for x in frequencies]
+        freqsRounded = [round(float(x), 2) for x in frequencies]
         print(f"frequencies: {freqsRounded}\n")
     
     degreeDirection = None
@@ -229,7 +230,8 @@ print("OSC Server started. Ready to receive messages!")
 # calculate and send initial frequencies
 calculateFreqs()
 sendFreqs()
-print(frequencies, "\n")
+freqsRounded = [round(float(x), 2) for x in frequencies]
+print(freqsRounded, "\n")
 
 # osc method to call cycleModes function
 osc_method("/mode", cycleModes)

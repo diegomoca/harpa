@@ -16,6 +16,13 @@
     ~meter.window.alwaysOnTop_(true)
 )
 
+// initialization
+(
+    s.latency = nil;
+    // set up osc client
+    ~oscClient = NetAddr("localhost", 57121);
+)
+
 // MIDI debug
 MIDIFunc.trace(false)
 
@@ -40,6 +47,17 @@ MIDIFunc.trace(false)
         bodBright = 0!2,
         bodDamp = [0.8, 0.2];
 
+    // OSC function to receive frequencies from python
+    ~frequenciesRecieve = OSCFunc({
+        |msg|
+        postln(msg[1..]);
+        striFreq = msg[1..];
+        striFreq.do({
+            |item, count|
+            ~keyArr[count].set(\striFreq, item)
+        })
+    }, '/freqs');
+
     // initialize midi
     MIDIClient.init;
     MIDIIn.connectAll;
@@ -62,6 +80,10 @@ MIDIFunc.trace(false)
 
     // array to index ressonators (number of elements = number of "bodies")
     ~bodyArr = nil!2;
+
+
+    // SynthDefs /////////////////////////////////////////////////////////////////////////
+
 
     // SynthDef for individual string
     SynthDef(\string, {
@@ -124,6 +146,10 @@ MIDIFunc.trace(false)
 
         Out.ar(0, sig * \bodVol.kr(0.2))
     }).add;
+
+
+    // MIDI /////////////////////////////////////////////////////////////////////////
+    
 
     // MIDIDefs to open and close string's ADSR
     // and to create a new body in case it doesn't exist
@@ -191,6 +217,33 @@ MIDIFunc.trace(false)
                 })
             };
         });
+        // cycle modes
+        if(note == 57){
+            ~oscClient.sendMsg("/mode", "prev")
+        };
+        if(note == 62){
+            ~oscClient.sendMsg("/mode", "next")
+        };
+        // transpose by cycle interval "pseudo-octave"
+        if(note == 48){
+            ~oscClient.sendMsg("/transposition/cycle_interval", "down")
+        };
+        if(note == 71){
+            ~oscClient.sendMsg("/transposition/cycle_interval", "up")
+        };
+        // transpose by generator interval
+        if(note == 59){
+            ~oscClient.sendMsg("/transposition/generator_interval/transpositionDirection", "down")
+        };
+        if(note == 60){
+            ~oscClient.sendMsg("/transposition/generator_interval/transpositionDirection", "up")
+        };
+        if(note == 52){
+            ~oscClient.sendMsg("/transposition/generator_interval/degreeDirection", "down")
+        };
+        if(note == 67){
+            ~oscClient.sendMsg("/transposition/generator_interval/degreeDirection", "up")
+        };
     });
     MIDIdef.noteOff(\stringGateClose, {
         |vel, note|
