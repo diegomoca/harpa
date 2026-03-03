@@ -1,212 +1,273 @@
+
+// testing gui
 (
-    s.makeWindow();
+    // server gui
+    s.makeWindow;
     s.window.alwaysOnTop_(true);
+
+
+    // node tree graph
+    ~plotTree = View(nil, Rect(0, 0, 300, 1000)).front.alwaysOnTop_(true);
+    s.plotTreeView(parent: ~plotTree);
+
+
+    // signal meter
+    ~meter = ServerMeter.new(s, 0, 2);
+    ~meter.window.alwaysOnTop_(true)
 )
 
-s.boot
-
-s.latency = nil;
-
-// set up osc client
-~oscClient = NetAddr("localhost", 57121);
-
-
-~oscClient.disconnect
-
-// create SynthDef
+// initialization
 (
-    SynthDef(\stringsBody, {
-        |resFreq = 40, position = 0.01,
-        resolution = 24, resoStruct = 0.5,
-        resoBright = 0.5, resoDamp = 0.5|
-        var t_trigger = NamedControl.kr(\t_trigger, 0!11);
-        var infsustain = NamedControl.kr(\infsustain, 1!11);
-        var strFreq = NamedControl.kr(\strFreq, 80!11);
-        var accent = NamedControl.kr(\accent, 0.5!11);
-        var striStruct = NamedControl.kr(\striStruct, 0.1!11);
-        var striBright = NamedControl.kr(\striBright, 0.1!11);
-        var striDamp = NamedControl.kr(\striDamp, 0.8!11);
-
-        var strings, signal, out, stringsPanned;
-        var panning = List.new;
-        var index = 0;
-
-        if (t_trigger[10] == 1){
-            strFreq[10].postln
-        };
-
-        strings = StringVoice.ar(
-            trig: t_trigger,
-            infsustain: infsustain,
-            freq: strFreq,
-            accent: accent,
-            structure: striStruct,
-            brightness: striBright,
-            damping: striDamp
-        );
-        
-        11.do({
-            panning.insert(
-                index,
-                (index * 1 / 5) - 1
-            );
-            index = index + 1
-        });
-        index = 0;
-        stringsPanned = Pan2.ar(strings, panning.asArray, 0.5).sum;
-
-        out = Resonator.ar(
-            input: strings,
-            freq: resFreq,
-            position: position,
-            resolution: resolution,
-            structure: resoStruct,
-            brightness: resoBright,
-            damping: resoDamp
-        );
-
-        Out.ar(0, stringsPanned)
-    }).add;
-    ~stringsBody = Synth(\stringsBody);
+    s.latency = nil;
+    // set up osc client
+    ~oscClient = NetAddr("localhost", 57121);
 )
 
-// set parameters
+// MIDI debug
+MIDIFunc.trace(false)
+
 (
-    ~stringsBody.setn(
-        // string parameters
-        \infsustain, 1!11,
-        \strFreq, [
-            100, 117.236328125, 133.984375,
-            153.125, 175.0, 200, 234.47265625,
-            267.96875, 306.25, 350.0, 400
-        ],
-        \accent, 0.5!11,
-        \striStruct, 0.1!11,
-        \striBright, 0.2!11,
-        \striDamp, 0.8!11,
-        // body parameters
-        \resFreq, 6.25,
-        \position, 0.5,
-        \resolution, 50,
-        \resoStruct, 0.2,
-        \resoBright, 0,
-        \resoDamp, 0.8
-    )
-)
+    // define midi notes to play strings
+    var stringKeys = [49, 51, 54, 56, 58, 61, 63, 66, 68, 70, 72];
 
-// Receive frequencies from python
-(   
+    // initial string parameters
+    // tuning (traditional pentatonic scale)
+    var striFreq = [100, 112.5, 126.5625, 150.0, 168.75, 200.0, 225.0, 253.125, 300.0, 337.5, 400.0],
+        striVol = 0.2!11,
+        accent = 0.5!11,
+        striStruct = 0.1!11,
+        striBright = 0.2!11,
+        striDamp = 0.8!11,
+        // initial body parameters
+        bodVol = [1, 0.5],
+        bodFreq = [12.5, 400],
+        position = 0.5!2,
+        resolution = 50!2,
+        bodStruct = 0.2!2,
+        bodBright = 0!2,
+        bodDamp = [0.8, 0.2];
+
+    // OSC function to receive frequencies from python
     ~frequenciesRecieve = OSCFunc({
         |msg|
         postln(msg[1..]);
-        ~stringsBody.setn(\strFreq, msg[1..]);
-    }, '/freqs')
-)
+        striFreq = msg[1..];
+        striFreq.do({
+            |item, count|
+            ~keyArr[count].set(\striFreq, item)
+        })
+    }, '/freqs');
 
-// initialize midi control
-(
-    var stringPicker = Array.new(11);
-    stringPicker = 0!11;
-
+    // initialize midi
     MIDIClient.init;
     MIDIIn.connectAll;
 
-    MIDIdef.noteOn(\noteOn, {
-        |val, num|
-        var stringKeys = [49, 51, 54, 56, 58, 61, 63, 66, 68, 70, 72];
+    // control bus to change the parameter "tigger frequency"
+    // and inital values
+    ~trigFreqBus = Bus.control(s, 1);
+    ~trigFreqBus.value_(0);
 
-        num.postln;
+    // audio bus to send string to 2 stereo bodies
+    ~bodyBus = Bus.audio(s, 4);
 
-            // string triggers
-            stringKeys.do({
-                arg item, count;
-                if(num == item){
-                    stringPicker.put(count, 1);
-                    ~stringsBody.setn(\t_trigger, stringPicker);
-                    stringPicker = 0!11;
-                };
-            });
-            // cycle modes
-            if(num == 57){
-                ~oscClient.sendMsg("/mode", "prev")
-            };
-            if(num == 62){
-                ~oscClient.sendMsg("/mode", "next")
-            };
-            // transpose by cycle interval "pseudo-octave"
-            if(num == 48){
-                ~oscClient.sendMsg("/transposition/cycle_interval", "down")
-            };
-            if(num == 71){
-                ~oscClient.sendMsg("/transposition/cycle_interval", "up")
-            };
-            // transpose by generator interval
-            if(num == 59){
-                ~oscClient.sendMsg("/transposition/generator_interval/transpositionDirection", "down")
-            };
-            if(num == 60){
-                ~oscClient.sendMsg("/transposition/generator_interval/transpositionDirection", "up")
-            };
-            if(num == 52){
-                ~oscClient.sendMsg("/transposition/generator_interval/degreeDirection", "down")
-            };
-            if(num == 67){
-                ~oscClient.sendMsg("/transposition/generator_interval/degreeDirection", "up")
-            };
-    })
-)
-MIDIdef.freeAll
+    // create a group for strings and one for bodies
+    // so that the bodies are always under the strings on the server
+    ~stringsGroup = Group.new;
+    ~bodiesGroup = Group.after(~stringsGroup);
 
-// initialize keyboard control
-(
-    var stringPicker = Array.new(11);
-    stringPicker = 0!11;
+    // array to index voices (number of elements = number of "strings")
+    ~keyArr = nil!11;
 
-    k = KeyPlayer(\stringNumber);
-    "qwervbzuiohalskdjcn".do{
-        |char|
-        k.put(char, {
-            |char|
-            var stringKeys = [$q, $w, $e, $r, $v, $b, $z, $u, $i, $o, $h];
-            ~generator_intervalTranspose = ["up", "up"];
+    // array to index ressonators (number of elements = number of "bodies")
+    ~bodyArr = nil!2;
 
-            // string triggers
-            stringKeys.do({
-                arg item, count;
-                if(char == item){
-                    stringPicker.put(count, 1);
-                    ~stringsBody.setn(\t_trigger, stringPicker);
-                    stringPicker = 0!11;
-                };
-            });
-            // cycle modes
-            if(char == $d){
-                ~oscClient.sendMsg("/mode", "prev")
+
+    // SynthDefs /////////////////////////////////////////////////////////////////////////
+
+
+    // SynthDef for individual string
+    SynthDef(\string, {
+        |out|
+        var sig, ampEnv, trigger, trigFreq, impulse;
+
+        // adsr envelope
+        ampEnv = Env.adsr(0.01);
+
+        // in for control bus binded to parameter trigger frequency
+        trigFreq = In.kr(\trigFreqBus.kr(0), 1);
+
+        // creation of phasor which can be retriggered and convertion to impulses
+        // for better implementation inside UGen Trig
+        impulse = HPZ1.kr(
+            Phasor.kr(\t_retrigger.kr(0), trigFreq * ControlDur.ir, 0, 1, 0)
+        ) < 0;
+
+        // actual trigger of the string with two possible activation modes
+        // constant impulses or random impulses
+        trigger = Trig.kr(Select.kr(\triggerMethod.kr(0), [
+            impulse + \t_retrigger.kr,
+            Dust.kr(trigFreq)
+        ]), \trigDur.kr(0.01));
+        
+        // actual string synthesizer
+        sig = StringVoice.ar(
+            trigger, 1, \striFreq.kr(300), \accent.kr(0.5),
+            \striStruct.kr(0.5), \striBright.kr(0.5), \striDamp.kr(0.5)
+        ) * EnvGen.kr(ampEnv, \gate.kr(1), doneAction: 2);
+
+        // pan and clone stereo signal to send to 2 bodies
+        sig = PanAz.ar(2, sig, \panning.kr(0.0));
+        sig = sig ++ sig;
+
+        // mix to different bodies
+        // multiply the first two amplitudes by the first value
+        sig[0] = sig[0] * ((1 - \bodySelect.kr(0.0)) / 2);
+        sig[1] = sig[1] * ((1 - \bodySelect.kr(0.0)) / 2);
+        // multiply the second two amplitudes by the second value
+        sig[2] = sig[2] * ((1 + \bodySelect.kr(0.0)) / 2);
+        sig[3] = sig[3] * ((1 + \bodySelect.kr(0.0)) / 2);
+        
+        Out.ar(out, sig * \striVol.kr(0.2))
+    }).add;
+
+    // SynthDef for body or resonator
+    SynthDef(\body, {
+        arg in, stringsFree = 0;
+        var sig;
+        
+        sig = In.ar(in, 2);
+        sig = Resonator.ar(
+            sig, \bodFreq.kr(100), \position.kr(0.001), \resolution.kr(24),
+            \bodStruct.kr(0.5), \bodBright.kr(0.5), \bodDamp.kr(0.5)
+        );
+        
+        // detect silence in both left and right and if strings are inactive, free body
+        FreeSelf.kr(DetectSilence.ar(sig + Impulse.ar(0)).product * stringsFree);
+
+        Out.ar(0, sig * \bodVol.kr(0.2))
+    }).add;
+
+
+    // MIDI /////////////////////////////////////////////////////////////////////////
+    
+
+    // MIDIDefs to open and close string's ADSR
+    // and to create a new body in case it doesn't exist
+    MIDIdef.noteOn(\stringGateOpen,{
+        |vel, note|
+
+        // cycle through all the string activating keys and execute triggers
+        // and releases if input from midi keyboard matches one of them
+        stringKeys.do({
+            // item is the item in the arrangement stringKeys and count is a counter
+            arg item, count;
+            if(note == item){
+               // create new bodies if they don't exist
+               ~bodyArr.do({
+                    arg item, count;
+                    if (item == nil, {
+                        ~bodyArr.put(count, Synth(\body, [
+                            \in, ~bodyBus.subBus(count * 2, 2).index,
+                            // body parameters
+                            \bodVol, bodVol[count],
+                            \bodFreq, bodFreq[count],
+                            \position, position[count],
+                            \resolution, resolution[count],
+                            \bodStruct, bodStruct[count],
+                            \bodBright, bodBright[count],
+                            \bodDamp, bodDamp[count],
+                        ], ~bodiesGroup).onFree({~bodyArr[count] = nil}))
+                    });
+               });
+                // create a new voice or retrigger if one already exist
+                if(~keyArr[count] == nil, {
+                    // create new string synthdef if it doesn't exist
+                    ~keyArr.put(count, Synth(\string, [
+                        // string parameters
+                        \striFreq, striFreq[count],
+                        \striVol, striVol[count],
+                        \accent, accent[count],
+                        \striStruct, striStruct[count],
+                        \striBright, striBright[count],
+                        \striDamp, striDamp[count],
+                        // string panning depending on key
+                        // 0 = -1, 10 = 1 for 11 strings 0-10
+                        \panning, (count * 1/5) * - 1,
+
+                        // determine which amount of each string goes into each body
+                        \bodySelect, (count * 9/50) - 0.9,
+
+                        \t_retrigger, 1,
+                        \out, ~bodyBus.index,
+                        \triggerMethod, 0,
+                        \trigFreqBus, ~trigFreqBus
+                    ], ~stringsGroup).onFree({
+                        // function to run everytime one of the strings are freed
+                        // reset the key index back to nil
+                        ~keyArr[count] = nil;
+                        // detect if all the strings are freed and perform the function
+                        if(~keyArr.every({ |item| item == nil }) == true, {
+                            // send message to bodies when all strings are free
+                            ~bodyArr.do({ |item| item.set(\stringsFree, 1)})
+                        })
+                    }))
+                }, {
+                    // if it exist, change its parameter
+                    ~keyArr.at(count).set(\t_retrigger, 1, \gate, 1)
+                })
             };
-            if(char == $j){
-                ~oscClient.sendMsg("/mode", "next")
-            };
-            // transpose by cycle interval "pseudo-octave"
-            if(char == $a){
-                ~oscClient.sendMsg("/transposition/cycle_interval", "down")
-            };
-            if(char == $l){
-                ~oscClient.sendMsg("/transposition/cycle_interval", "up")
-            };
-            // transpose by generator interval
-            if(char == $c){
-                ~oscClient.sendMsg("/transposition/generator_interval/transpositionDirection", "down")
-            };
-            if(char == $n){
-                ~oscClient.sendMsg("/transposition/generator_interval/transpositionDirection", "up")
-            };
-            if(char == $s){
-                ~oscClient.sendMsg("/transposition/generator_interval/degreeDirection", "down")
-            };
-            if(char == $k){
-                ~oscClient.sendMsg("/transposition/generator_interval/degreeDirection", "up")
+        });
+        // cycle modes
+        if(note == 57){
+            ~oscClient.sendMsg("/mode", "prev")
+        };
+        if(note == 62){
+            ~oscClient.sendMsg("/mode", "next")
+        };
+        // transpose by cycle interval "pseudo-octave"
+        if(note == 48){
+            ~oscClient.sendMsg("/transposition/cycle_interval", "down")
+        };
+        if(note == 71){
+            ~oscClient.sendMsg("/transposition/cycle_interval", "up")
+        };
+        // transpose by generator interval
+        if(note == 59){
+            ~oscClient.sendMsg("/transposition/generator_interval/transpositionDirection", "down")
+        };
+        if(note == 60){
+            ~oscClient.sendMsg("/transposition/generator_interval/transpositionDirection", "up")
+        };
+        if(note == 52){
+            ~oscClient.sendMsg("/transposition/generator_interval/degreeDirection", "down")
+        };
+        if(note == 67){
+            ~oscClient.sendMsg("/transposition/generator_interval/degreeDirection", "up")
+        };
+    });
+    MIDIdef.noteOff(\stringGateClose, {
+        |vel, note|
+        stringKeys.do({
+            arg item, count;
+            if(note == item){
+                // operate only if synthdef exists
+                if(~keyArr[count]!= nil, {
+                    ~keyArr.at(count).set(\gate, 0)
+                })
             };
         })
-    };
-    g = KeyPlayerGui(k);
+    });
+
+    // MIDIdef to control parameter "trigger frequency"
+    MIDIdef.cc(\paramChange, {
+        |val, num|
+
+        ~trigFreqBus.get({
+            |busVal|
+            if(0 < (busVal + ((val - 64) * 0.1)) && {(busVal + ((val - 64) * 0.1)) < 20}, {
+                ~trigFreqBus.value_(busVal + ((val - 64) * 0.1))
+        })
+        });
+        ~trigFreqBus.getSynchronous.postln
+    }, ccNum: 27)
 )
