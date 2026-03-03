@@ -26,17 +26,19 @@ MIDIFunc.trace(false)
     // initial string parameters
     // tuning (traditional pentatonic scale)
     var striFreq = [100, 112.5, 126.5625, 150.0, 168.75, 200.0, 225.0, 253.125, 300.0, 337.5, 400.0],
+        striVol = 0.2!11,
         accent = 0.5!11,
         striStruct = 0.1!11,
         striBright = 0.2!11,
         striDamp = 0.8!11,
         // initial body parameters
-        bodFreq = 6.25!2,
+        bodVol = [1, 0.5],
+        bodFreq = [12.5, 400],
         position = 0.5!2,
         resolution = 50!2,
         bodStruct = 0.2!2,
         bodBright = 0!2,
-        bodDamp = 0.8!2;
+        bodDamp = [0.8, 0.2];
 
     // initialize midi
     MIDIClient.init;
@@ -47,8 +49,8 @@ MIDIFunc.trace(false)
     ~trigFreqBus = Bus.control(s, 1);
     ~trigFreqBus.value_(0);
 
-    // audio bus to send audio to body
-    ~bodyBus = Bus.audio(s, 2);
+    // audio bus to send string to 2 stereo bodies
+    ~bodyBus = Bus.audio(s, 4);
 
     // create a group for strings and one for bodies
     // so that the bodies are always under the strings on the server
@@ -91,15 +93,24 @@ MIDIFunc.trace(false)
             \striStruct.kr(0.5), \striBright.kr(0.5), \striDamp.kr(0.5)
         ) * EnvGen.kr(ampEnv, \gate.kr(1), doneAction: 2);
 
-        // panning
-        sig = PanAz.ar(2, sig, \panning.kr(0.0), 1.0);
+        // pan and clone stereo signal to send to 2 bodies
+        sig = PanAz.ar(2, sig, \panning.kr(0.0));
+        sig = sig ++ sig;
 
-        Out.ar(out, sig * 0.2)
+        // mix to different bodies
+        // multiply the first two amplitudes by the first value
+        sig[0] = sig[0] * ((1 - \bodySelect.kr(0.0)) / 2);
+        sig[1] = sig[1] * ((1 - \bodySelect.kr(0.0)) / 2);
+        // multiply the second two amplitudes by the second value
+        sig[2] = sig[2] * ((1 + \bodySelect.kr(0.0)) / 2);
+        sig[3] = sig[3] * ((1 + \bodySelect.kr(0.0)) / 2);
+        
+        Out.ar(out, sig * \striVol.kr(0.2))
     }).add;
 
     // SynthDef for body or resonator
     SynthDef(\body, {
-        |in, stringsFree = 0|
+        arg in, stringsFree = 0;
         var sig;
         
         sig = In.ar(in, 2);
@@ -111,7 +122,7 @@ MIDIFunc.trace(false)
         // detect silence in both left and right and if strings are inactive, free body
         FreeSelf.kr(DetectSilence.ar(sig + Impulse.ar(0)).product * stringsFree);
 
-        Out.ar(0, sig * 0.2)
+        Out.ar(0, sig * \bodVol.kr(0.2))
     }).add;
 
     // MIDIDefs to open and close string's ADSR
@@ -125,25 +136,30 @@ MIDIFunc.trace(false)
             // item is the item in the arrangement stringKeys and count is a counter
             arg item, count;
             if(note == item){
-               // create new body if it doesn't exist
-                if (~bodyArr[0] == nil, {
-                    ~bodyArr.put(0, Synth(\body, [
-                        \in, ~bodyBus,
-                        // body parameters
-                        \bodFreq, bodFreq[0],
-                        \position, position[0],
-                        \resolution, resolution[0],
-                        \bodStruct, bodStruct[0],
-                        \bodBright, bodBright[0],
-                        \bodDamp, bodDamp[0],
-                    ], ~bodiesGroup).onFree({~bodyArr[0] = nil}))
-                });
+               // create new bodies if they don't exist
+               ~bodyArr.do({
+                    arg item, count;
+                    if (item == nil, {
+                        ~bodyArr.put(count, Synth(\body, [
+                            \in, ~bodyBus.subBus(count * 2, 2).index,
+                            // body parameters
+                            \bodVol, bodVol[count],
+                            \bodFreq, bodFreq[count],
+                            \position, position[count],
+                            \resolution, resolution[count],
+                            \bodStruct, bodStruct[count],
+                            \bodBright, bodBright[count],
+                            \bodDamp, bodDamp[count],
+                        ], ~bodiesGroup).onFree({~bodyArr[count] = nil}))
+                    });
+               });
                 // create a new voice or retrigger if one already exist
                 if(~keyArr[count] == nil, {
                     // create new string synthdef if it doesn't exist
                     ~keyArr.put(count, Synth(\string, [
                         // string parameters
                         \striFreq, striFreq[count],
+                        \striVol, striVol[count],
                         \accent, accent[count],
                         \striStruct, striStruct[count],
                         \striBright, striBright[count],
@@ -152,8 +168,11 @@ MIDIFunc.trace(false)
                         // 0 = -1, 10 = 1 for 11 strings 0-10
                         \panning, (count * 1/5) * - 1,
 
+                        // determine which amount of each string goes into each body
+                        \bodySelect, (count * 9/50) - 0.9,
+
                         \t_retrigger, 1,
-                        \out, ~bodyBus,
+                        \out, ~bodyBus.index,
                         \triggerMethod, 0,
                         \trigFreqBus, ~trigFreqBus
                     ], ~stringsGroup).onFree({
@@ -162,8 +181,8 @@ MIDIFunc.trace(false)
                         ~keyArr[count] = nil;
                         // detect if all the strings are freed and perform the function
                         if(~keyArr.every({ |item| item == nil }) == true, {
-                            // send message to body when all strings are free
-                            ~bodyArr[0].set(\stringsFree, 1)
+                            // send message to bodies when all strings are free
+                            ~bodyArr.do({ |item| item.set(\stringsFree, 1)})
                         })
                     }))
                 }, {
@@ -192,8 +211,8 @@ MIDIFunc.trace(false)
 
         ~trigFreqBus.get({
             |busVal|
-            if(0 < (busVal + (val - 64 * 0.1)) && {(busVal + ((val - 64) * 0.1)) < 20}, {
-                ~trigFreqBus.value_(busVal + (val - 64 * 0.1))
+            if(0 < (busVal + ((val - 64) * 0.1)) && {(busVal + ((val - 64) * 0.1)) < 20}, {
+                ~trigFreqBus.value_(busVal + ((val - 64) * 0.1))
         })
         });
         ~trigFreqBus.getSynchronous.postln
