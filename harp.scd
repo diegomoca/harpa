@@ -33,11 +33,6 @@ MIDIFunc.trace(false)
     // initial string parameters
     // tuning (traditional pentatonic scale)
     var striFreq = [100, 112.5, 126.5625, 150.0, 168.75, 200.0, 225.0, 253.125, 300.0, 337.5, 400.0],
-        striVol = 0.2!11,
-        accent = 0.5!11,
-        striStruct = 0.1!11,
-        striBright = 0.2!11,
-        striDamp = 0.8!11,
         // initial body parameters
         bodVol = [1, 0.5],
         bodFreq = [12.5, 400],
@@ -62,10 +57,51 @@ MIDIFunc.trace(false)
     MIDIClient.init;
     MIDIIn.connectAll;
 
-    // control bus to change the parameter "tigger frequency"
-    // and inital values
+    // create control buses and give initial values
+    // ADSR1 parameters
+    ~attack1Bus = Bus.control(s, 1);
+    ~attack1Bus.value_(0.01);
+    ~decay1Bus = Bus.control(s, 1);
+    ~decay1Bus.value_(0.3);
+    ~sustain1Bus = Bus.control(s, 1);
+    ~sustain1Bus.value_(0.5);
+    ~release1Bus = Bus.control(s, 1);
+    ~release1Bus.value_(1);
+    ~curve1Bus = Bus.control(s, 1);
+    ~curve1Bus.value_(-4);
+    // trigger parameters
     ~trigFreqBus = Bus.control(s, 1);
     ~trigFreqBus.value_(0);
+    ~trigDurBus = Bus.control(s, 1);
+    ~trigDurBus.value_(0.01);
+    // string parameters
+    // ~striFreqBus = Bus.control(s, 1);
+    // ~striFreqBus.value_(300);
+    ~striVolBus = Bus.control(s, 1);
+    ~striVolBus.value_(0.2);
+    ~accentBus = Bus.control(s, 1);
+    ~accentBus.value_(0.5);
+    ~striStructBus = Bus.control(s, 1);
+    ~striStructBus.value_(0.1);
+    ~striBrightBus = Bus.control(s, 1);
+    ~striBrightBus.value_(0.2);
+    ~striDampBus = Bus.control(s, 1);
+    ~striDampBus.value_(0.8);
+    // body parameters
+    // ~bodVolBus = Bus.control(s, 1);
+    // ~bodVolBus.value_(0.2);
+    // ~bodFreqBus = Bus.control(s, 1);
+    // ~bodFreqBus.value_(0.2);
+    ~positionBus = Bus.control(s, 1);
+    ~positionBus.value_(0.5);
+    ~resolutionBus = Bus.control(s, 1);
+    ~resolutionBus.value_(50);
+    ~bodStructBus = Bus.control(s, 1);
+    ~bodStructBus.value_(0.2);
+    ~bodBrightBus = Bus.control(s, 1);
+    ~bodBrightBus.value_(0);
+    // ~bodDampBus = Bus.control(s, 1);
+    // ~bodDampBus.value_(0.2);
 
     // audio bus to send string to 2 stereo bodies
     ~bodyBus = Bus.audio(s, 4);
@@ -88,13 +124,28 @@ MIDIFunc.trace(false)
     // SynthDef for individual string
     SynthDef(\string, {
         |out|
-        var sig, ampEnv, trigger, trigFreq, impulse;
+        var sig, ampEnv, trigger, impulse;
+
+        // define busses
+        // in for control bus binded to parameter trigger frequency
+        var attack1 = In.kr(\attack1Bus.kr(0.01), 1),
+        // ADSR1 parameters busses
+            decay1 = In.kr(\decay1Bus.kr(0.3), 1),
+            sustain1 = In.kr(\sustain1Bus.kr(0.5), 1),
+            release1 = In.kr(\release1Bus.kr(1), 1),
+            curve1 = In.kr(\curve1Bus.kr(-4), 1),
+        // trigger parameter busses
+            trigFreq = In.kr(\trigFreqBus.kr(0), 1),
+            trigDur = In.kr(\trigDurBus.kr(0.01), 1),
+        // string parameter busses
+            volume = In.kr(\striVolBus.kr(0.2), 1),
+            accent = In.kr(\accentBus.kr(0.5), 1),
+            structure = In.kr(\striStructBus.kr(0.1), 1),
+            brightness = In.kr(\striBrightBus.kr(0.2), 1),
+            damping = In.kr(\striDampBus.kr(0.8), 1);
 
         // adsr envelope
-        ampEnv = Env.adsr(0.01);
-
-        // in for control bus binded to parameter trigger frequency
-        trigFreq = In.kr(\trigFreqBus.kr(0), 1);
+        ampEnv = Env.adsr(attack1, decay1, sustain1, release1, curve: curve1);
 
         // creation of phasor which can be retriggered and convertion to impulses
         // for better implementation inside UGen Trig
@@ -107,12 +158,12 @@ MIDIFunc.trace(false)
         trigger = Trig.kr(Select.kr(\triggerMethod.kr(0), [
             impulse + \t_retrigger.kr,
             Dust.kr(trigFreq)
-        ]), \trigDur.kr(0.01));
+        ]), trigDur);
         
         // actual string synthesizer
         sig = StringVoice.ar(
-            trigger, 1, \striFreq.kr(300), \accent.kr(0.5),
-            \striStruct.kr(0.5), \striBright.kr(0.5), \striDamp.kr(0.5)
+            trigger, 1, \striFreq.kr(300), accent,
+            structure, brightness, damping
         ) * EnvGen.kr(ampEnv, \gate.kr(1), doneAction: 2);
 
         // pan and clone stereo signal to send to 2 bodies
@@ -127,18 +178,24 @@ MIDIFunc.trace(false)
         sig[2] = sig[2] * ((1 + \bodySelect.kr(0.0)) / 2);
         sig[3] = sig[3] * ((1 + \bodySelect.kr(0.0)) / 2);
         
-        Out.ar(out, sig * \striVol.kr(0.2))
+        Out.ar(out, sig * volume)
     }).add;
 
     // SynthDef for body or resonator
     SynthDef(\body, {
         arg in, stringsFree = 0;
         var sig;
-        
+
+        // define busses
+        var position = In.kr(\positionBus.kr(0.5), 1),
+            resolution = In.kr(\resolutionBus.kr(50), 1),
+            structure = In.kr(\bodStructBus.kr(0.2), 1),
+            brightness = In.kr(\bodBrightBus.kr(0), 1);
+
         sig = In.ar(in, 2);
         sig = Resonator.ar(
-            sig, \bodFreq.kr(100), \position.kr(0.001), \resolution.kr(24),
-            \bodStruct.kr(0.5), \bodBright.kr(0.5), \bodDamp.kr(0.5)
+            sig, \bodFreq.kr(100), position, resolution,
+            structure, brightness, \bodDamp.kr(0.5)
         );
         
         // detect silence in both left and right and if strings are inactive, free body
@@ -171,10 +228,10 @@ MIDIFunc.trace(false)
                             // body parameters
                             \bodVol, bodVol[count],
                             \bodFreq, bodFreq[count],
-                            \position, position[count],
-                            \resolution, resolution[count],
-                            \bodStruct, bodStruct[count],
-                            \bodBright, bodBright[count],
+                            \positionBus, ~positionBus,
+                            \resolutionBus, ~resolutionBus,
+                            \bodStructBus, ~bodStructBus,
+                            \bodBrightBus, ~bodBrightBus,
                             \bodDamp, bodDamp[count],
                         ], ~bodiesGroup).onFree({~bodyArr[count] = nil}))
                     });
@@ -183,24 +240,34 @@ MIDIFunc.trace(false)
                 if(~keyArr[count] == nil, {
                     // create new string synthdef if it doesn't exist
                     ~keyArr.put(count, Synth(\string, [
+                        // ADSR1 parameters
+                        \attack1Bus, ~attack1Bus,
+                        \decay1Bus, ~decay1Bus,
+                        \sustain1Bus, ~sustain1Bus,
+                        \release1Bus, ~release1Bus,
+                        \curve1Bus, ~curve1Bus,
                         // string parameters
                         \striFreq, striFreq[count],
-                        \striVol, striVol[count],
-                        \accent, accent[count],
-                        \striStruct, striStruct[count],
-                        \striBright, striBright[count],
-                        \striDamp, striDamp[count],
+                        \striVolBus, ~striVolBus,
+                        \accentBus, ~accentBus,
+                        \striStructBus, ~striStructBus,
+                        \striBrightBus, ~striBrightBus,
+                        \striDampBus, ~striDampBus,
+                        // trigger parameters
+                        \trigFreqBus, ~trigFreqBus,
+                        \trigDurBus, ~trigDurBus,
+
+                        // "routing"
                         // string panning depending on key
                         // 0 = -1, 10 = 1 for 11 strings 0-10
                         \panning, (count * 1/5) * - 1,
-
                         // determine which amount of each string goes into each body
                         \bodySelect, (count * 9/50) - 0.9,
 
                         \t_retrigger, 1,
                         \out, ~bodyBus.index,
                         \triggerMethod, 0,
-                        \trigFreqBus, ~trigFreqBus
+
                     ], ~stringsGroup).onFree({
                         // function to run everytime one of the strings are freed
                         // reset the key index back to nil

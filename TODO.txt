@@ -1,9 +1,9 @@
 TODO
 0.1
-- add individual string parameters
-- add note hold mode
 - add better interface for parameters
     - map parameters to midi controller
+- add individual string parameters
+- add note hold mode
 - add live controls for python variables
 - implement sorted and unsorted mode
 - add individual transposition controls to each hand and make them controllable with the oposite hand
