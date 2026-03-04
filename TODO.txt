@@ -1,13 +1,13 @@
 TODO
 0.1
-- add better interface for parameters
-    - map parameters to midi controller
-- add individual string parameters
+- separate program in multiple files
 - add note hold mode
+- add individual string parameters
+- add second envelope triggered individual pulses
 - add live controls for python variables
 - implement sorted and unsorted mode
 - add individual transposition controls to each hand and make them controllable with the oposite hand
-- add second envelope triggered individual pulses
+- make it so that when predicted parameter is outside of limits, output equals limits
 
 - make function of encoders exponential
 - print the degree of each frequency respective to the number of stacked cycle intervals
@@ -16,6 +16,8 @@ TODO
 - test different tunings
 - create interface to change parameter via osc address input through keyboard
 - add width and position to panning (search max project for reference)
+- map velocity
+- add chance to skip impulses
 
 DONE
 X connect to python
@@ -37,3 +39,5 @@ X implement two bodies
     X send different mix to ech body
 X reconnect to python
     X use fractions
+X add better interface for parameters
+    X map parameters to midi controller
