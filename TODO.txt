@@ -1,6 +1,5 @@
 TODO
 0.1
-- add note hold mode
 - add individual string parameters
 - add second envelope triggered individual pulses
 - add live controls for python variables
@@ -17,6 +16,8 @@ TODO
 - add width and position to panning (search max project for reference)
 - map velocity
 - add chance to skip impulses
+- add sync to global
+- add detune from reveived frequency instead of frequency for string parameter
 
 DONE
 X connect to python
@@ -41,3 +42,4 @@ X reconnect to python
 X add better interface for parameters
     X map parameters to midi controller
 X separate program in multiple files
+X add note hold mode

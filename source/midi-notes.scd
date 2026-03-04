@@ -7,7 +7,8 @@ var striFreq = [100, 112.5, 126.5625, 150.0, 168.75, 200.0, 225.0, 253.125, 300.
     // initial body parameters
     bodVol = [1, 0.5],
     bodFreq = [12.5, 400],
-    bodDamp = [0.8, 0.2];
+    bodDamp = [0.8, 0.2],
+    holdMode = 0;
 
 // OSC function to receive frequencies from python
 ~frequenciesRecieve = OSCFunc({
@@ -122,15 +123,22 @@ MIDIdef.noteOn(\stringGateOpen,{
         ~oscClient.sendMsg("/transposition/generator_interval/degreeDirection", "up")
     };
 });
+
+MIDIdef.cc(\holdMode, {
+    |val, num|
+    if(holdMode == 0, {holdMode = 1}, {holdMode = 0});
+    holdMode.postln
+}, ccNum: 64);
+
 MIDIdef.noteOff(\stringGateClose, {
     |vel, note|
     stringKeys.do({
         arg item, count;
-        if(note == item){
+        if(note == item && {holdMode == 0},{
             // operate only if synthdef exists
             if(~keyArr[count]!= nil, {
                 ~keyArr.at(count).set(\gate, 0)
             })
-        };
+        });
     })
 });
