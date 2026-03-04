@@ -1,6 +1,5 @@
 TODO
 0.1
-- separate program in multiple files
 - add note hold mode
 - add individual string parameters
 - add second envelope triggered individual pulses
@@ -41,3 +40,4 @@ X reconnect to python
     X use fractions
 X add better interface for parameters
     X map parameters to midi controller
+X separate program in multiple files
