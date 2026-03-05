@@ -65,6 +65,7 @@ MIDIdef.noteOn(\stringGateOpen,{
                     \striBrightBus, ~striBrightBus,
                     \striDampBus, ~striDampBus,
                     // trigger parameters
+                    \trigMethBus, ~trigMethBus,
                     \trigFreqBus, ~trigFreqBus,
                     \trigDurBus, ~trigDurBus,
 

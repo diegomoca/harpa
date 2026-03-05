@@ -1,5 +1,5 @@
 // MIDIdef to control parameter "trigger frequency"
-MIDIdef.cc(\triggerFreq, {
+MIDIdef.cc(\trigFreq, {
     |val, num|
     ~trigFreqBus.get({
         |busVal|
@@ -11,7 +11,7 @@ MIDIdef.cc(\triggerFreq, {
 }, ccNum: 20);
 
 // MIDIdef for parameter trigger duration
-MIDIdef.cc(\triggerDur, {
+MIDIdef.cc(\trigDur, {
     |val, num|
     ~trigDurBus.get({
         |busVal|
@@ -19,6 +19,20 @@ MIDIdef.cc(\triggerDur, {
     });
     // ~trigDurBus.getSynchronous.postln
 }, ccNum: 52);
+
+// MIDIdef for parameter trigger duration
+MIDIdef.cc(\trigMeth, {
+    |val, num|
+    ~trigMethBus.get({
+        |busVal|
+        if(abs(val - 64) == 3, {
+            if(0 <= (busVal + ((val - 64)/3)) && {(busVal + ((val - 64)/3)) <= 1}, {
+                ~trigMethBus.value_(busVal + (val-64).sign)
+            })
+        })
+    });
+    ~trigMethBus.getSynchronous.postln
+}, ccNum: 59);
 
 MIDIdef.cc(\attack1, {
     |val, num|
@@ -57,15 +71,6 @@ MIDIdef.cc(\release, {
     });
     // ~release1Bus.getSynchronous.postln
 }, ccNum: 56);
-
-MIDIdef.cc(\curve, {
-    |val, num|
-    ~curve1Bus.get({
-        |busVal|
-        ~curve1Bus.value_(busVal + ((val - 64) * 0.01))
-    });
-    // ~curve1Bus.getSynchronous.postln
-}, ccNum: 57);
 
 MIDIdef.cc(\curve, {
     |val, num|
@@ -139,7 +144,7 @@ MIDIdef.cc(\bodStruct, {
             ~bodStructBus.value_(busVal + ((val - 64) * 0.01))
         })
     });
-    ~bodStructBus.getSynchronous.postln
+    // ~bodStructBus.getSynchronous.postln
 }, ccNum: 26);
 
 MIDIdef.cc(\bodBright, {
@@ -150,5 +155,5 @@ MIDIdef.cc(\bodBright, {
             ~bodBrightBus.value_(busVal + ((val - 64) * 0.01))
         })
     });
-    ~bodBrightBus.getSynchronous.postln
+    // ~bodBrightBus.getSynchronous.postln
 }, ccNum: 27);

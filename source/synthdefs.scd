@@ -14,6 +14,7 @@ SynthDef(\string, {
     // trigger parameter busses
         trigFreq = In.kr(\trigFreqBus.kr(0), 1),
         trigDur = In.kr(\trigDurBus.kr(0.01), 1),
+        trigMeth = In.kr(\trigMethBus.kr(0), 1),
     // string parameter busses
         volume = In.kr(\striVolBus.kr(0.2), 1),
         accent = In.kr(\accentBus.kr(0.5), 1),
@@ -32,7 +33,7 @@ SynthDef(\string, {
 
     // actual trigger of the string with two possible activation modes
     // constant impulses or random impulses
-    trigger = Trig.kr(Select.kr(\triggerMethod.kr(0), [
+    trigger = Trig.kr(Select.kr(trigMeth, [
         impulse + \t_retrigger.kr,
         Dust.kr(trigFreq)
     ]), trigDur);

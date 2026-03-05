@@ -15,6 +15,8 @@
 ~trigFreqBus.value_(0);
 ~trigDurBus = Bus.control(s, 1);
 ~trigDurBus.value_(0.01);
+~trigMethBus = Bus.control(s, 1);
+~trigMethBus.value_(0);
 // string parameters
 // ~striFreqBus = Bus.control(s, 1);
 // ~striFreqBus.value_(300);
