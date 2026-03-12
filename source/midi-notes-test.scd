@@ -1,6 +1,6 @@
 {
-    |harp|
-    MIDIdef.noteOn((harp.midiNoteID).asSymbol, {
-        Synth.new(\stringTest, [\t_trigger, harp.t_trigger, \trigFreq, harp.trigFreq, \freq, harp.testFreq])
+    |self|
+    MIDIdef.noteOn((self.midiNoteID).asSymbol, {
+        Synth.new(\stringTest, [\t_trigger, self.t_trigger, \trigFreq, self.buses.trigFreq, \freq, self.testFreq])
     })
 }

@@ -1,4 +1,8 @@
-"synthdefs-test.scd".loadRelative;
+var keyboardFunction = Require("midi-notes-test"),
+    ccFunction = Require("midi-cc-test"),
+    busList = Require("control-buses-test");
+
+Require("synthdefs-test");
 
 ~makeHarpa = {
     |testFreq|
@@ -9,29 +13,18 @@
         midiNoteID: midiNoteID,
         midiCCID: midiCCID,
         t_trigger: 1,
-        trigFreq: Bus.control(s, 1).set(2),
+        buses: busList.value,
         keyboardActive: nil,
         ccActive: nil,
 
         keyboardActivate: {
             |self|
-            self.keyboardActive = MIDIdef.noteOn((self.midiNoteID).asSymbol, {
-                Synth.new(\stringTest, [\t_trigger, self.t_trigger, \trigFreq, self.trigFreq, \freq, self.testFreq])
-            })
+            self.keyboardActive = keyboardFunction.value(self)
         },
 
         ccActivate: {
             |self|
-            self.ccActive = MIDIdef.cc((self.midiCCID).asSymbol, {
-                |val, num|
-                self.trigFreq.get({
-                    |busVal|
-                    if(0 < (busVal + ((val - 64) * 0.1)) && {(busVal + ((val - 64) * 0.1)) < 20}, {
-                        self.trigFreq.value_(busVal + ((val - 64) * 0.1))
-                    })
-                });
-                self.trigFreq.getSynchronous.postln
-            })
+            self.ccActive = ccFunction.value(self)
         },
 
         keyboardDeactivate: { |self| self.keyboardActive.free},
