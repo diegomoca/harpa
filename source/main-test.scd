@@ -1,8 +1,8 @@
 // load required files outside fuction so that path stays relative
 // using the "Require" quark so that functions load properly
-var keyboardFunction = Require("midi-notes-test"),
-    ccFunction = Require("midi-cc-test"),
-    busList = Require("control-buses-test");
+var busList = Require("control-buses-test"),
+    keyboardFunction = Require("midi-notes-test"),
+    ccFunction = Require("midi-cc-test");
 
 // load main SynthDef
 Require("synthdefs-test");
