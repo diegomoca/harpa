@@ -89,7 +89,7 @@
         MIDIdef.cc(("holdMode" ++ self.synthID).asSymbol, {
             |val, num|
             if(self.init.holdMode == 0, {self.init.holdMode = 1}, {self.init.holdMode = 0});
-            self.init.holdMode.postln
+            [self.synthID, \holdMode, self.init.holdMode].postln
         }, ccNum: 64),
 
         MIDIdef.noteOff(("stringGateClose" ++ self.synthID).asSymbol, {

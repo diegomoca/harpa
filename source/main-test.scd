@@ -11,10 +11,11 @@ Require("synthdefs-test");
 // pseudo class to create multiple instances of the instrument
 ~makeHarpa = {
     // values that can be set at initialization and get passed to the event
-    |testFreq|
+    |id|
     // create unique IDs for each instance of synthesizer
     // for individual MIDIdefs
-    var synthID = UniqueID.next;
+    var synthID = UniqueID.next.asSymbol;
+    if(id.notNil, {synthID = id.asSymbol});
     (
         // function from loaded file containing dictionary
         // with initialization values
@@ -23,8 +24,6 @@ Require("synthdefs-test");
         buses: busList.value,
         // trigger for individual instances
         t_trigger: 1,
-        // initial parameter test
-        testFreq: testFreq,
 
         // unique ID for any instance of the synth
         synthID: synthID,
@@ -46,7 +45,7 @@ Require("synthdefs-test");
 
         // pseudo methods to disconnect midi controls from instrument instances
         keyboardDeactivate: { |self| self.keyboardActive.do{ |item| item.free } },
-        ccDeactivate: { |self| self.ccActive.free}
+        ccDeactivate: { |self| self.ccActive.do{ |item| item.free } }
     )
 };
 
