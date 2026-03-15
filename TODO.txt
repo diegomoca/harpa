@@ -1,7 +1,6 @@
 TODO
 V 1.0.0
-- find a way to make different instances loadable from another program
-- find a way to disconnect controls from instances
+- implement python frequencies calculator instances
 
 V 1.0.1
 - add individual string parameters
@@ -50,3 +49,5 @@ X add better interface for parameters
     X map parameters to midi controller
 X separate program in multiple files
 X add note hold mode
+X find a way to make different instances loadable from another program
+X find a way to disconnect controls from instances

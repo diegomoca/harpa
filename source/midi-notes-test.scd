@@ -30,8 +30,16 @@
                                 \bodStructBus,  self.buses.bodStruct,
                                 \bodBrightBus,  self.buses.bodBright,
                                 \bodDamp,       self.init.bodDamp[count],
+                                // bus used for fadeout on destroy
+                                \fadeoutBus,    self.init.fadeoutBus,
 
-                            ], self.init.bodiesGroup).onFree({self.init.bodyArr[count] = nil}))
+                            ], self.init.bodiesGroup).onFree({
+                                self.init.bodyArr[count] = nil;
+                                if(self.init.bodyArr.every({ |item| item == nil })) {
+                                    "test".postln;
+                                    self.removeGroups;
+                                }
+                            }))
                         });
                     });
                     // create a new voice or retrigger if one already exist
@@ -67,6 +75,9 @@
                             \t_retrigger,     1,
                             \out,           self.init.bodyBus.index,
                             \triggerMethod, 0,
+                            
+                            // bus used for fadeout on destroy
+                            \fadeoutBus,    self.init.fadeoutBus,
 
                         ], self.init.stringsGroup).onFree({
                             // function to run everytime one of the strings are freed
@@ -75,7 +86,10 @@
                             // detect if all the strings are freed and perform the function
                             if(self.init.keyArr.every({ |item| item == nil }) == true, {
                                 // send message to bodies when all strings are free
-                                self.init.bodyArr.do({ |item| item.set(\stringsFree, 1)})
+                                self.init.bodyArr.do({
+                                    |item| 
+                                    if(item.notNil, {item.set(\stringsFree, 1)})
+                                })
                             })
                         }))
                     }, {

@@ -5,6 +5,9 @@
         // audio bus to send string to 2 stereo bodies
         bodyBus: Bus.audio(s, 4),
 
+        // bus to fadeout everything
+        fadeoutBus: Bus.control(s, 1).value_(1.0),
+
         // create a group for strings and one for bodies
         // so that the bodies are always under the strings on the server
         stringsGroup: stringsGroup,
@@ -27,6 +30,7 @@
         bodVol: [1, 0.5],
         bodFreq: [12.5, 400],
         bodDamp: [0.8, 0.2],
-        holdMode: 0,
+        // TODO turn hold mode back to 0
+        holdMode: 1,
     )
 }

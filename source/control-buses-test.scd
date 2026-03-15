@@ -7,7 +7,8 @@
     release1:   Bus.control(s, 1).value_(1),
     curve1:     Bus.control(s, 1).value_(-4),
     // trigger parameters
-    trigFreq:   Bus.control(s, 1).value_(0),
+    // TODO turn trigFreq back to 0
+    trigFreq:   Bus.control(s, 1).value_(5),
     trigDur:    Bus.control(s, 1).value_(0.01),
     trigMeth:   Bus.control(s, 1).value_(0),
     // string parameters

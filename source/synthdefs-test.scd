@@ -17,7 +17,7 @@ SynthDef(\stringTest, {
         trigDur = In.kr(\trigDurBus.kr(0.01), 1),
         trigMeth = In.kr(\trigMethBus.kr(0), 1),
     // string parameter busses
-        volume = In.kr(\striVolBus.kr(0.2), 1),
+        volume = In.kr(\striVolBus.kr(0.2), 1) * In.kr(\fadeoutBus.kr(1.0), 1),
         accent = In.kr(\accentBus.kr(0.5), 1),
         structure = In.kr(\striStructBus.kr(0.1), 1),
         brightness = In.kr(\striBrightBus.kr(0.2), 1),
@@ -79,5 +79,5 @@ SynthDef(\bodyTest, {
     // detect silence in both left and right and if strings are inactive, free body
     FreeSelf.kr(DetectSilence.ar(sig + Impulse.ar(0)).product * stringsFree);
 
-    Out.ar(0, sig * \bodVol.kr(0.2))
+    Out.ar(0, sig * \bodVol.kr(0.2) * In.kr(\fadeoutBus.kr(1.0), 1))
 }).add;
