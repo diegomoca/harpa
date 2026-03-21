@@ -1,38 +1,77 @@
+// load required files outside fuction so that path stays relative
+// using the "Require" quark so that functions load properly
+var initialization      = Require("initialization"),
+    busList             = Require("control-buses"),
+    keyboardFunction    = Require("midi-notes"),
+    ccFunction          = Require("midi-cc");
 
-// testing gui
-(
-    // server gui
-    s.makeWindow;
-    s.window.alwaysOnTop_(true);
+// load SynthDefs
+Require("synthdefs");
 
+// pseudo class to create multiple instances of the instrument
+~makeHarpa = {
+    // values that can be set at initialization and get passed to the event
+    |id|
+    // create unique IDs for each instance of synthesizer
+    // for individual MIDIdefs
+    var synthID = UniqueID.next.asSymbol;
+    if(id.notNil, {synthID = id.asSymbol});
+    (
+        // function from loaded file containing dictionary
+        // with initialization values
+        init: initialization.value,
+        // function from the loaded file containing buses dictionary
+        buses: busList.value,
+        // trigger for individual instances
+        t_trigger: 1,
 
-    // node tree graph
-    ~plotTree = View(nil, Rect(0, 0, 300, 1000)).front.alwaysOnTop_(true);
-    s.plotTreeView(parent: ~plotTree);
+        // unique ID for any instance of the synth
+        synthID: synthID,
+        // variables to store MIDIdefs and be able to free them
+        keyboardActive: nil,
+        ccActive: nil,
 
+        // pseudo method to connect midi keyboard to instrument instances
+        keyboardActivate: {
+            |self|
+            self.keyboardActive = keyboardFunction.value(self)
+        },
 
-    // signal meter
-    ~meter = ServerMeter.new(s, 0, 2);
-    ~meter.window.alwaysOnTop_(true)
-)
+        // pseudo method to connect cc controls to instrument instances
+        ccActivate: {
+            |self|
+            self.ccActive = ccFunction.value(self)
+        },
 
-(
-    // initialization ///////////////////////////////////////////////////////////////
-    "initialization.scd".loadRelative;
+        // pseudo methods to disconnect midi controls from instrument instances
+        keyboardDeactivate: { |self| self.keyboardActive.do{ |item| item.free } },
+        ccDeactivate: { |self| self.ccActive.do{ |item| item.free } },
 
-    // SynthDefs ////////////////////////////////////////////////////////////////////
+        // remove created groups when destroy method gets called
+        removeGroups: { |self| self.init.stringsGroup.free; self.init.bodiesGroup.free},
 
-    "synthdefs.scd".loadRelative;
+        // fadeout synths and remove them
+        removeSynths: {
+            |self|
+            var line = {
+                Out.kr(
+                    self.init.fadeoutBus.index,
+                    Line.kr(1.0, 0.0, 0.5, doneAction: 2)
+                )
+            }.play;
+            line.onFree({
+                // close all string gates so that bodies can close
+                self.init.keyArr.do { |item| item.notNil.if { item.set(\gate, 0) } };
 
-    // MIDI /////////////////////////////////////////////////////////////////////////
-    "midi-notes.scd".loadRelative;
-    "midi-cc.scd".loadRelative;
-)
-
-// MIDI debug
-MIDIFunc.trace(true)
-MIDIFunc.trace(false)
-
-
-
+                 // one-shot watcher: runs only for this destroy call
+                Routine({
+                    while({ self.init.bodyArr.any({ |item| item.notNil }) }, {
+                        0.02.wait; // non-blocking polling
+                    });
+                    self.removeGroups;
+                }).play;
+            });
+        }
+    )
+};
 

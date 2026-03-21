@@ -1,8 +1,5 @@
 TODO
-V 1.0.0
-- clean up code
-
-V 1.0.1
+1.0.1
 - add individual string parameters
 - add second envelope triggered individual pulses
 - add live controls for python variables
@@ -13,7 +10,7 @@ V 1.0.1
     - make function of needed encoders exponential
     - step frequencies by 1 cent
 
-V 1.0.X
+1.0.X
 - print the degree of each frequency respective to the number of stacked cycle intervals
 - print intervals alongside frequencies
 - add randomizeer/humanizer around parameter settings
@@ -55,3 +52,5 @@ X add note hold mode
 X find a way to make different instances loadable from another program
 X find a way to disconnect controls from instances
 X implement python frequencies calculator instances
+X clean up code
+X 1.0.0
