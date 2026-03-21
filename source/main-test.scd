@@ -62,6 +62,14 @@ Require("synthdefs-test");
             line.onFree({
                 // close all string gates so that bodies can close
                 self.init.keyArr.do { |item| item.notNil.if { item.set(\gate, 0) } };
+
+                 // one-shot watcher: runs only for this destroy call
+                Routine({
+                    while({ self.init.bodyArr.any({ |item| item.notNil }) }, {
+                        0.02.wait; // non-blocking polling
+                    });
+                    self.removeGroups;
+                }).play;
             });
         }
     )

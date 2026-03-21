@@ -30,7 +30,6 @@
         bodVol: [1, 0.5],
         bodFreq: [12.5, 400],
         bodDamp: [0.8, 0.2],
-        // TODO turn hold mode back to 0
-        holdMode: 1,
+        holdMode: 0,
     )
 }

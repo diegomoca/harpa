@@ -1,6 +1,6 @@
 TODO
 V 1.0.0
-- implement python frequencies calculator instances
+- clean up code
 
 V 1.0.1
 - add individual string parameters
@@ -24,6 +24,9 @@ V 1.0.X
 - add chance to skip impulses
 - add sync to global
 - add detune from reveived frequency instead of frequency for string parameter
+- add computer keyboard control
+- add xy influx control
+- start instances with random parameters
 
 DONE
 X connect to python
@@ -51,3 +54,4 @@ X separate program in multiple files
 X add note hold mode
 X find a way to make different instances loadable from another program
 X find a way to disconnect controls from instances
+X implement python frequencies calculator instances

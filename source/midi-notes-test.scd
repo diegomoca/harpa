@@ -34,11 +34,7 @@
                                 \fadeoutBus,    self.init.fadeoutBus,
 
                             ], self.init.bodiesGroup).onFree({
-                                self.init.bodyArr[count] = nil;
-                                if(self.init.bodyArr.every({ |item| item == nil })) {
-                                    "test".postln;
-                                    self.removeGroups;
-                                }
+                                self.init.bodyArr[count] = nil;                                
                             }))
                         });
                     });
@@ -98,6 +94,32 @@
                     })
                 };
             });
+            if(note == 57){
+                ~pyOSCClient.sendMsg("/instruments/harpa" +/+ self.synthID.asString +/+ "freqs/mode", "prev")
+            };
+            if(note == 62){
+                ~pyOSCClient.sendMsg("/instruments/harpa" +/+ self.synthID.asString +/+ "freqs/mode", "next")
+            };
+            // transpose by cycle interval "pseudo-octave"
+            if(note == 48){
+                ~pyOSCClient.sendMsg("/instruments/harpa" +/+ self.synthID.asString +/+ "freqs/transposition/cycle_interval", "down");
+            };
+            if(note == 71){
+                ~pyOSCClient.sendMsg("/instruments/harpa" +/+ self.synthID.asString +/+ "freqs/transposition/cycle_interval", "up");
+            };
+            // transpose by generator interval
+            if(note == 59){
+                ~pyOSCClient.sendMsg("/instruments/harpa" +/+ self.synthID.asString +/+ "freqs/transposition/generator_interval/transpositionDirection", "down")
+            };
+            if(note == 60){
+                ~pyOSCClient.sendMsg("/instruments/harpa" +/+ self.synthID.asString +/+ "freqs/transposition/generator_interval/transpositionDirection", "up")
+            };
+            if(note == 52){
+                ~pyOSCClient.sendMsg("/instruments/harpa" +/+ self.synthID.asString +/+ "freqs/transposition/generator_interval/degreeDirection", "down")
+            };
+            if(note == 67){
+                ~pyOSCClient.sendMsg("/instruments/harpa" +/+ self.synthID.asString +/+ "freqs/transposition/generator_interval/degreeDirection", "up")
+            };
         }),
 
         MIDIdef.cc(("holdMode" ++ self.synthID).asSymbol, {
