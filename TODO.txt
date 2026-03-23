@@ -24,6 +24,7 @@ TODO
 - add computer keyboard control
 - add xy influx control
 - start instances with random parameters
+- find a way to store and recall presets
 
 DONE
 X connect to python
