@@ -116,7 +116,7 @@
             if(val != 64, {
             self.buses.striVol.get({
                 |busVal|
-                if(-70 < (busVal.ampdb + ((val - 64) * 0.1)) && {(busVal.ampdb + ((val - 64) * 0.1)) < 6}, {
+                if(-70 < (busVal.ampdb + ((val - 64) * 0.1)) && {(busVal.ampdb + ((val - 64) * 0.1)) < 0}, {
                     self.buses.striVol.value_((busVal.ampdb + ((val - 64) * 0.15)).dbamp)
                 })
             });

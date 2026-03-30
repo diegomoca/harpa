@@ -56,7 +56,7 @@ SynthDef(\string, {
     sig[2] = sig[2] * ((1 + \bodySelect.kr(0.0)) / 2);
     sig[3] = sig[3] * ((1 + \bodySelect.kr(0.0)) / 2);
     
-    Out.ar(out, sig * volume)
+    Out.ar(out, sig * volume * 0.2)
 }).add;
 
 // SynthDef for body or resonator
@@ -77,5 +77,5 @@ SynthDef(\body, {
     // detect silence in both left and right and if strings are inactive, free body
     FreeSelf.kr(DetectSilence.ar(sig + Impulse.ar(0)).product * stringsFree);
 
-    Out.ar(0, sig * \bodVol.kr(0.2) * In.kr(\fadeoutBus.kr(1.0), 1))
+    Out.ar(0, sig * 0.2 * \bodVol.kr(0.2) * In.kr(\fadeoutBus.kr(1.0), 1))
 }).add;
